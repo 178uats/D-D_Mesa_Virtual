@@ -3,124 +3,158 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>D&D Mesa Táctica - Salas Simples</title>
+    <title>D&D Mesa Táctica - Edición Premium</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root {
-            --bg-main: #121214;
-            --bg-panel: #1a1a1e;
-            --bg-input: #26262b;
-            --border-color: #3f3f46;
-            --accent-red: #e11d48;
-            --accent-red-hover: #f43f5e;
-            --text-main: #f4f4f5;
-            --text-muted: #a1a1aa;
-            --dnd-gold: #d97706;
-            --dm-purple: #7c3aed;
+            --bg-main: #1a1613;
+            --bg-panel: #f2e7c9; /* Textura pergamino claro */
+            --bg-input: #ffffff;
+            --border-color: #8c6d53;
+            --accent-red: #9e1b1b;
+            --accent-red-hover: #c62828;
+            --text-main: #2b1d0c;
+            --text-muted: #614e39;
+            --dnd-gold: #b37d14;
+            --dm-purple: #5c259e;
+            
+            /* Modo Oscuro (Noche) */
+            --bg-panel-dark: #241f1c;
+            --text-main-dark: #e0d4c3;
+            --text-muted-dark: #a89a88;
+            --bg-input-dark: #332b27;
         }
 
         body {
             margin: 0;
-            font-family: 'Segoe UI', system-ui, sans-serif;
+            font-family: 'Georgia', serif;
             background-color: var(--bg-main);
             color: var(--text-main);
             display: grid;
             grid-template-columns: 320px 1fr 430px;
             height: 100vh;
             overflow: hidden;
+            transition: all 0.3s ease;
         }
 
-        /* Componentes de Interfaz */
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
-        .panel { background-color: var(--bg-panel); border-right: 1px solid var(--border-color); padding: 15px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px; overflow-y: auto; }
-        .panel-sheet { border-right: none; border-left: 1px solid var(--border-color); }
-        h2 { font-size: 1rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--accent-red); margin: 0 0 5px 0; border-bottom: 2px solid var(--accent-red); padding-bottom: 4px; }
+        /* Modo Oscuro Aplicado */
+        body.modo-oscuro {
+            --bg-panel: var(--bg-panel-dark);
+            --text-main: var(--text-main-dark);
+            --text-muted: var(--text-muted-dark);
+            --bg-input: var(--bg-input-dark);
+        }
+
+        body.modo-oscuro input, body.modo-oscuro textarea, body.modo-oscuro select {
+            color: #ffffff;
+        }
+
+        /* Paneles Estilo Pergamino */
+        .panel { 
+            background-color: var(--bg-panel); 
+            border-right: 2px solid var(--border-color); 
+            padding: 15px; 
+            box-sizing: border-box; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 12px; 
+            overflow-y: auto; 
+            box-shadow: inset 0 0 40px rgba(139,94,60,0.15);
+        }
+        .panel-sheet { border-right: none; border-left: 2px solid var(--border-color); }
+        
+        h2 { font-size: 1.1rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--accent-red); margin: 0 0 5px 0; border-bottom: 2px solid var(--border-color); padding-bottom: 4px; display: flex; align-items: center; gap: 6px; }
         h3 { font-size: 0.85rem; color: var(--dnd-gold); margin: 8px 0 4px 0; text-transform: uppercase; }
-        .card-box { background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; }
+        
+        .card-box { background: rgba(139,94,60,0.08); border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; }
+        body.modo-oscuro .card-box { background: rgba(0,0,0,0.25); }
+
         .form-row { display: flex; gap: 6px; margin-bottom: 6px; }
         .input-group { display: flex; flex-direction: column; gap: 3px; flex: 1; }
         .input-group label { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600; }
-        input, textarea, select { background-color: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-main); padding: 6px; border-radius: 4px; font-size: 0.8rem; }
-        button { background-color: var(--accent-red); color: white; border: none; padding: 8px 12px; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 0.85rem; }
-        button:hover { background-color: var(--accent-red-hover); }
-        .btn-sec { background-color: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-main); }
-
-        .role-indicator { display: flex; justify-content: space-between; align-items: center; background: #09090b; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); }
-        .btn-role { background-color: var(--dm-purple); }
-        #log-dados { background: #09090b; border: 1px solid var(--border-color); border-radius: 4px; padding: 8px; flex-grow: 1; overflow-y: auto; font-family: monospace; font-size: 0.8rem; min-height: 100px; }
-
-        /* Centro y Tablero */
-        .map-area { display: flex; flex-direction: column; background-color: #18181b; position: relative; overflow: hidden; }
-        .movable-action-bar { position: absolute; top: 20px; left: 20px; z-index: 90; display: flex; gap: 6px; background: rgba(26,26,30,0.95); padding: 8px; border-radius: 8px; border: 1px solid var(--border-color); cursor: move; box-shadow: 0 4px 12px rgba(0,0,0,0.6); user-select: none; touch-action: none; }
         
-        .map-viewport { flex: 1; overflow: auto; padding: 20px; }
+        input, textarea, select { background-color: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-main); padding: 6px; border-radius: 4px; font-size: 0.8rem; font-family: inherit; }
+        button { background-color: var(--accent-red); color: white; border: 1px solid #5e1010; padding: 8px 12px; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 0.85rem; font-family: inherit; display: inline-flex; align-items: center; justify-content: center; gap: 4px; }
+        button:hover { background-color: var(--accent-red-hover); }
+
+        .role-indicator { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.05); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); }
+        body.modo-oscuro .role-indicator { background: rgba(0,0,0,0.3); }
+
+        #log-dados { background: rgba(0,0,0,0.05); border: 1px solid var(--border-color); border-radius: 4px; padding: 8px; flex-grow: 1; overflow-y: auto; font-family: monospace; font-size: 0.8rem; min-height: 90px; }
+        body.modo-oscuro #log-dados { background: rgba(0,0,0,0.4); }
+
+        /* Centro y Tablero Textura Madera */
+        .map-area { display: flex; flex-direction: column; background-color: #140f0d; position: relative; overflow: hidden; }
+        .movable-action-bar { position: absolute; top: 20px; left: 20px; z-index: 90; display: flex; gap: 6px; background: var(--bg-panel); padding: 8px; border-radius: 8px; border: 2px solid var(--border-color); cursor: move; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        
+        .map-viewport { flex: 1; overflow: auto; padding: 20px; display: flex; align-items: center; justify-content: center; }
+        
         #grid-tablero { 
             width: 800px; height: 800px; 
-            background-image: linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px); 
-            background-size: 40px 40px; background-color: #27272a; border: 3px solid var(--dnd-gold); position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.8);
+            background-image: 
+                linear-gradient(to right, rgba(255,255,255,0.04) 1px, transparent 1px), 
+                linear-gradient(to bottom, rgba(255,255,255,0.04) 1px, transparent 1px),
+                radial-gradient(circle, transparent 20%, #1a120b 80%),
+                url('https://www.transparenttextures.com/patterns/dark-wood.png'); /* Textura de madera */
+            background-size: 40px 40px, 40px 40px, 100% 100%, auto; 
+            background-color: #2b1a0f; 
+            border: 4px solid var(--border-color); 
+            position: relative; 
+            box-shadow: 0 0 30px rgba(0,0,0,0.9);
         }
         #canvas-dibujo { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
         body.dm-mode #canvas-dibujo { pointer-events: auto; }
 
-        /* Tokens */
-        .token { width: 36px; height: 36px; border-radius: 50%; background-color: #2563eb; border: 2px solid white; position: absolute; cursor: move; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 10px; user-select: none; z-index: 5; box-shadow: 0 4px 6px rgba(0,0,0,0.5); touch-action: none; }
-        .token.enemigo { background-color: #dc2626; }
+        /* Tokens e Iconos de Estado */
+        .token { width: 36px; height: 36px; border-radius: 50%; background-color: #2563eb; border: 2px solid white; position: absolute; cursor: move; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 10px; color: white; user-select: none; z-index: 5; box-shadow: 0 4px 8px rgba(0,0,0,0.6); touch-action: none; transition: transform 0.1s ease; }
+        .token.enemigo { background-color: #dc2626; border-color: #fca5a5; }
+        .token-badge { position: absolute; top: -6px; right: -6px; background: #000; border-radius: 50%; width: 14px; height: 14px; font-size: 8px; display: flex; align-items: center; justify-content: center; border: 1px solid white; }
 
-        /* Ficha de Personaje */
-        .dnd-header { background: #09090b; padding: 8px; border-radius: 6px; margin-bottom: 8px; border: 1px dashed var(--dnd-gold); }
+        /* Menú de Estados Contextual */
+        .menu-estados { position: absolute; background: var(--bg-panel); border: 2px solid var(--border-color); border-radius: 6px; padding: 6px; display: none; grid-template-columns: repeat(3, 1fr); gap: 4px; z-index: 1000; box-shadow: 0 4px 10px rgba(0,0,0,0.4); }
+        .menu-estados button { padding: 4px; font-size: 0.65rem; background: var(--bg-input); color: var(--text-main); border: 1px solid var(--border-color); }
+
+        /* Fichas e indicadores */
+        .dnd-header { background: rgba(0,0,0,0.04); padding: 8px; border-radius: 6px; margin-bottom: 8px; border: 1px dashed var(--border-color); }
         .stats-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; margin-bottom: 8px; }
-        .stat-box { background: #09090b; border: 1px solid var(--border-color); border-radius: 4px; text-align: center; padding: 4px; }
+        .stat-box { background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 4px; text-align: center; padding: 4px; }
         .stat-box span { display: block; font-size: 0.55rem; color: var(--text-muted); font-weight: bold; }
-        .stat-box input { width: 85%; text-align: center; font-size: 0.85rem; font-weight: bold; border: none; background: transparent; color: white; }
+        .stat-box input { width: 85%; text-align: center; font-size: 0.85rem; font-weight: bold; border: none; background: transparent; }
         
         .combat-metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-bottom: 8px; }
-        .metric-box { background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 4px; padding: 4px; text-align: center; }
-        .metric-box.hp { border-color: var(--accent-red); }
+        .metric-box { background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 4px; padding: 4px; text-align: center; }
         .metric-box label { font-size: 0.55rem; color: var(--text-muted); display: block; font-weight: bold; }
-        .metric-box input { width: 85%; text-align: center; font-weight: bold; font-size: 0.8rem; background: transparent; border: none; color: white; }
+        .metric-box input { width: 85%; text-align: center; font-weight: bold; font-size: 0.8rem; background: transparent; border: none; }
 
-        .skills-container { background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 6px; padding: 6px; font-size: 0.75rem; max-height: 110px; overflow-y: auto; }
-        .skill-line { display: flex; align-items: center; gap: 4px; padding: 2px 0; border-bottom: 1px solid #27272a; }
-        .skill-line .mod-val { color: var(--dnd-gold); font-weight: bold; margin-left: auto; width: 25px; text-align: right; border: none; background: transparent; }
-
-        .section-tabs { display: flex; gap: 2px; margin-top: 8px; }
-        .tab-btn { flex: 1; padding: 5px; font-size: 0.7rem; background: var(--bg-main); border: 1px solid var(--border-color); color: var(--text-muted); border-radius: 4px 4px 0 0; }
-        .tab-btn.active { background: var(--bg-panel); border-bottom-color: transparent; color: var(--dnd-gold); font-weight: bold; }
-        .tab-content { background: var(--bg-main); border: 1px solid var(--border-color); border-top: none; padding: 8px; min-height: 70px; border-radius: 0 0 4px 4px; }
-
-        /* Visibilidad de Modos */
+        .skills-container { background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 6px; padding: 6px; font-size: 0.75rem; max-height: 90px; overflow-y: auto; }
+        .skill-line { display: flex; align-items: center; gap: 4px; padding: 2px 0; border-bottom: 1px solid rgba(139,94,60,0.15); }
+        
         .dm-only { display: none !important; }
         body.dm-mode .player-only { display: none !important; }
         body.dm-mode .dm-only { display: flex !important; }
-        body.dm-mode h2 { color: var(--dm-purple); border-bottom-color: var(--dm-purple); }
+        body.dm-mode h2 { color: var(--dm-purple); }
+
+        .top-right-controls { position: absolute; top: 15px; right: 15px; z-index: 100; display: flex; gap: 6px; }
+        .btn-toggle-view { background: var(--bg-panel); color: var(--text-main); border: 2px solid var(--border-color); padding: 6px; font-size: 0.8rem; }
 
         @media (max-width: 900px) {
-            body { grid-template-columns: 1fr; grid-template-rows: 1fr 50px; }
-            .panel { position: fixed; top: 0; left: 0; width: 100vw; height: calc(100vh - 50px); z-index: 100; display: none; }
-            .panel.active { display: flex; }
-            .map-area { width: 100vw; height: calc(100vh - 50px); }
-            .mobile-nav { display: grid !important; grid-template-columns: repeat(3, 1fr); background: #09090b; border-top: 1px solid var(--border-color); z-index: 200; position: fixed; bottom: 0; width: 100vw; height: 50px; }
-            .mobile-nav button { background: transparent; color: var(--text-muted); border: none; font-size: 0.75rem; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-            .mobile-nav button.active { color: var(--accent-red); font-weight: bold; background: var(--bg-panel); }
-            body.dm-mode .mobile-nav button.active { color: var(--dm-purple); }
+            body { grid-template-columns: 1fr; }
+            .panel { display: none; }
         }
-        .mobile-nav { display: none; }
     </style>
 </head>
 <body>
 
-    <div class="mobile-nav">
-        <button class="active" onclick="verPanel('mapa', this)">🗺️ Mapa</button>
-        <button onclick="verPanel('herramientas', this)">🎲 Dados</button>
-        <button onclick="verPanel('ficha', this)" id="btn-tab-ficha">🛡️ Ficha</button>
+    <!-- CONTROL MODO OSCURO Y VISTA -->
+    <div class="top-right-controls">
+        <button class="btn-toggle-view" onclick="conmutarModoOscuro()">🌙 Modo Noche</button>
     </div>
 
-    <!-- COLUMNA IZQUIERDA -->
+    <!-- COLUMNA IZQUIERDA: RED Y DADOS -->
     <div class="panel" id="panel-herramientas">
         <div class="role-indicator">
-            <span id="role-text" style="font-weight: bold; font-size:0.85rem;">Modo: JUGADOR</span>
-            <button onclick="cambiarRol()" class="btn-role" id="btn-toggle-rol">Ser DM 👑</button>
+            <span id="role-text" style="font-weight: bold; font-size:0.85rem;">🛡️ Rol: JUGADOR</span>
+            <button onclick="cambiarRol()" class="btn-role" id="btn-toggle-rol" style="background-color: var(--dm-purple);">Ser DM 👑</button>
         </div>
 
         <h2>👤 Identidad</h2>
@@ -131,34 +165,24 @@
             </div>
         </div>
 
-        <h2>🌐 Conexión de Salas</h2>
-        <div class="card-box" style="display: flex; flex-direction: column; gap: 8px;">
-            
-            <!-- SECCIÓN CREAR SALA -->
+        <h2>🌐 Conexión 📜</h2>
+        <div class="card-box" style="display: flex; flex-direction: column; gap: 6px;">
             <div class="input-group">
-                <label>1. Crear Sala con Nombre:</label>
+                <label>Crear Sala con Nombre:</label>
                 <div style="display: flex; gap: 4px;">
-                    <input type="text" id="custom-room-id" placeholder="ej. mi-sala-77" style="flex: 1;">
-                    <button onclick="crearSalaPersonalizada()" style="background-color: var(--dnd-gold); font-size: 0.75rem;">Crear Sala</button>
+                    <input type="text" id="custom-room-id" placeholder="ej. mi-partida-99" style="flex: 1;">
+                    <button onclick="crearSalaPersonalizada()" style="background-color: var(--dnd-gold); font-size: 0.75rem;">Crear</button>
                 </div>
             </div>
-
-            <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 4px 0;">
-            
-            <!-- ESTADO ACTUAL -->
-            <p style="margin: 0; font-size: 0.75rem;">Tu Estado / Sala Activa: <b id="mi-id" style="color: var(--accent-red);">Sin Sala</b></p>
-            
-            <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 4px 0;">
-
-            <!-- SECCIÓN UNIRSE A SALA -->
+            <p style="margin: 4px 0; font-size: 0.72rem;">Sala: <b id="mi-id" style="color: var(--accent-red);">Sin Conexión</b></p>
             <div class="input-group">
                 <label>ID de la Sala Destino:</label>
                 <input type="text" id="peer-id-destino" placeholder="Introduce el ID para unirte">
-                <button onclick="conectarAlDM()" style="margin-top: 4px; background-color: #10b981;">Unirse a Sala</button>
+                <button onclick="conectarAlDM()" style="margin-top: 4px; background-color: #10b981; border-color:#0b6e4f;">Unirse a Sala</button>
             </div>
         </div>
 
-        <h2>🎲 Dados</h2>
+        <h2>🎲 Tirar Dados ⚔️</h2>
         <div class="card-box">
             <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 4px;">
                 <button onclick="lanzarDado(4)">d4</button>
@@ -166,26 +190,25 @@
                 <button onclick="lanzarDado(8)">d8</button>
                 <button onclick="lanzarDado(10)">d10</button>
                 <button onclick="lanzarDado(12)">d12</button>
-                <button onclick="lanzarDado(20)" style="background: var(--dnd-gold);">d20</button>
+                <button onclick="lanzarDado(20)" style="background: var(--dnd-gold); border-color:#825b0e;">d20</button>
             </div>
         </div>
         <div id="log-dados"></div>
     </div>
 
-    <!-- CENTRO: MAPA -->
+    <!-- CENTRO: TABLERO DE MADERA -->
     <div class="map-area" id="panel-mapa">
         <div class="movable-action-bar" id="barra-acciones">
             <span style="font-size:0.75rem; align-self:center; cursor:move;">⁞⁞</span>
-            <button onclick="crearTokenLocal('PJ', 'jugador')">⚔️ Mi Token</button>
+            <button onclick="crearTokenLocal('PJ', 'jugador')">⚔️ Mi Ficha</button>
             <button onclick="crearTokenLocal('E', 'enemigo')" class="dm-only" style="background-color: #dc2626;">😈 Monstruo</button>
             
             <div class="dm-only" style="display:flex; align-items:center; gap:4px; border-left:1px solid var(--border-color); padding-left:6px;">
                 <select id="color-pincel" style="padding:2px; font-size:0.75rem;">
-                    <option value="#e11d48">🟥 Muro</option>
+                    <option value="#9e1b1b">🟥 Muro</option>
                     <option value="#3b82f6">🟦 Puerta</option>
-                    <option value="#22c55e">🟩 Secreto</option>
                 </select>
-                <button onclick="limpiarDibujoLocal()" style="background:#3f3f46; padding:4px; font-size:0.7rem;">🗑_</button>
+                <button onclick="limpiarDibujoLocal()" style="background:#8c6d53; padding:4px; font-size:0.7rem;">🗑️</button>
             </div>
         </div>
         
@@ -194,63 +217,89 @@
                 <canvas id="canvas-dibujo" width="800" height="800"></canvas>
             </div>
         </div>
+
+        <!-- Menú flotante de condiciones -->
+        <div id="menu-condiciones" class="menu-estados">
+            <button onclick="aplicarEstadoToken('🤢')">🤢 Veneno</button>
+            <button onclick="aplicarEstadoToken('🧊')">🧊 Parálisis</button>
+            <button onclick="aplicarEstadoToken('👻')">👻 Invisible</button>
+            <button onclick="aplicarEstadoToken('💤')">💤 Inconsciente</button>
+            <button onclick="aplicarEstadoToken('🔥')">🔥 Fuego</button>
+            <button onclick="aplicarEstadoToken('❌')">❌ Quitar</button>
+        </div>
     </div>
 
-    <!-- COLUMNA DERECHA -->
+    <!-- COLUMNA DERECHA: BIBLIOTECAS Y FICHAS -->
     <div class="panel panel-sheet" id="panel-ficha">
-        <!-- FICHA DE JUGADOR -->
-        <div class="player-only" style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
+        
+        <!-- BIBLIOTECAS -->
+        <h2>📜 Biblioteca de Compendios</h2>
+        <div class="card-box" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 5px;">
+            <div class="input-group player-only">
+                <label>🛡️ Elegir Héroe Prehecho:</label>
+                <select id="lib-heroes" onchange="cargarHeroeBiblioteca()">
+                    <option value="">-- Crear Ficha Manual --</option>
+                    <option value="guerrero">Garith (Guerrero Enano)</option>
+                    <option value="mago">Elysia (Maga Elfa)</option>
+                    <option value="picaro">Zev (Pícaro Mediano)</option>
+                </select>
+            </div>
+            <div class="input-group dm-only">
+                <label>😈 Elegir Monstruo del Bestiario:</label>
+                <select id="lib-monstruos" onchange="cargarMonstruoBiblioteca()">
+                    <option value="">-- Monstruo Personalizado --</option>
+                    <option value="goblin">Goblin Rastrero (CR 1/4)</option>
+                    <option value="orco">Orco Berserker (CR 1)</option>
+                    <option value="dragon">Dragón Joven (CR 6)</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- HOJA DINÁMICA JUGADOR -->
+        <div class="player-only" style="display: flex; flex-direction: column; gap: 6px; width: 100%;">
             <h2>🛡️ Ficha de Personaje</h2>
             <div class="dnd-header">
                 <div class="form-row">
-                    <div class="input-group"><label>Nombre Personaje</label><input type="text" value="Garith"></div>
-                    <div class="input-group" style="max-width: 50px;"><label>Nivel</label><input type="number" value="1"></div>
-                </div>
-                <div class="form-row">
-                    <div class="input-group"><label>Clase y Subclase</label><input type="text" value="Paladín"></div>[cite: 1]
-                    <div class="input-group"><label>Especie / Trasfondo</label><input type="text" value="Humano / Soldado"></div>[cite: 1]
+                    <div class="input-group"><label>Nombre</label><input type="text" id="pc-name" value="Garith"></div>
+                    <div class="input-group" style="max-width: 50px;"><label>Nivel</label><input type="number" id="pc-level" value="1"></div>
                 </div>
             </div>
 
             <div class="stats-row">
-                <div class="stat-box"><span>FUE</span><input type="number" value="15"></div>
-                <div class="stat-box"><span>DES</span><input type="number" value="10"></div>
-                <div class="stat-box"><span>CON</span><input type="number" value="14"></div>
-                <div class="stat-box"><span>INT</span><input type="number" value="8"></div>
-                <div class="stat-box"><span>SAB</span><input type="number" value="12"></div>
-                <div class="stat-box"><span>CAR</span><input type="number" value="14"></div>
+                <div class="stat-box"><span>FUE</span><input type="number" id="s-fue" value="15"></div>
+                <div class="stat-box"><span>DES</span><input type="number" id="s-des" value="10"></div>
+                <div class="stat-box"><span>CON</span><input type="number" id="s-con" value="14"></div>
+                <div class="stat-box"><span>INT</span><input type="number" id="s-int" value="8"></div>
+                <div class="stat-box"><span>SAB</span><input type="number" id="s-sab" value="12"></div>
+                <div class="stat-box"><span>CAR</span><input type="number" id="s-car" value="14"></div>
             </div>
 
             <div class="combat-metrics">
-                <div class="metric-box"><label>Armadura CA</label><input type="number" value="18"></div>[cite: 1]
-                <div class="metric-box"><label>Iniciativa</label><input type="number" value="0"></div>[cite: 1]
-                <div class="metric-box hp"><label>PG Actuales</label><input type="number" value="12"></div>[cite: 1]
-                <div class="metric-box"><label>PG Máximos</label><input type="number" value="12"></div>[cite: 1]
+                <div class="metric-box"><label>🛡️ CA</label><input type="number" id="pc-ca" value="18"></div>[cite: 1]
+                <div class="metric-box hp" style="border-color: var(--accent-red);"><label>❤️ PG Act</label><input type="number" id="pc-hp" value="12"></div>[cite: 1]
+                <div class="metric-box"><label>❤️ PG Max</label><input type="number" id="pc-hpmax" value="12"></div>[cite: 1]
+                <div class="metric-box"><label>🏃 Vel</label><input type="text" id="pc-vel" value="30 ft"></div>[cite: 1]
             </div>
 
             <div class="skills-container">
-                <div class="skill-line"><input type="checkbox" checked> <label>Atletismo</label> <input class="mod-val" value="+4"></div>[cite: 1]
-                <div class="skill-line"><input type="checkbox"> <label>Sigilo</label> <input class="mod-val" value="0"></div>[cite: 1]
-                <div class="skill-line"><input type="checkbox" checked> <label>Percepción</label> <input class="mod-val" value="+3"></div>[cite: 1]
-            </div>
-
-            <div class="section-tabs">
-                <button class="tab-btn active" onclick="cambiarTab('tab-atq', this)">Ataques</button>[cite: 1]
-                <button class="tab-btn" onclick="cambiarTab('tab-features', this)">Rasgos / Dotes</button>[cite: 1]
-            </div>
-            <div class="tab-content" id="tab-atq">
-                <textarea style="width:95%; height:45px; background:transparent; border:none; resize:none;" placeholder="Espada Larga | +4 Atq | 1d8+2 Daño"></textarea>[cite: 1]
+                <div class="skill-line"><label>⚔️ Atletismo</label> <input style="width:30px; border:none; background:transparent;" value="+4"></div>[cite: 1]
+                <div class="skill-line"><label>🏹 Sigilo</label> <input style="width:30px; border:none; background:transparent;" value="0"></div>[cite: 1]
+                <div class="skill-line"><label>👁️ Percepción</label> <input style="width:30px; border:none; background:transparent;" value="+3"></div>[cite: 1]
             </div>
         </div>
 
-        <!-- PANEL DE MASTER Y MONSTRUOS -->
-        <div class="dm-only" style="display: flex; flex-direction: column; gap: 10px; width: 100%;">
+        <!-- PANEL DM -->
+        <div class="dm-only" style="display: flex; flex-direction: column; gap: 6px; width: 100%;">
             <h2>👑 Panel del Dungeon Master</h2>
             <div class="card-box" style="border-color: var(--dm-purple);">
-                <h3>Generador de Bestias</h3>
                 <div class="form-row">
-                    <div class="input-group"><input type="text" id="dm-enemy-name" value="Goblin"></div>
-                    <button onclick="invocarMonstruoDM()" style="background-color: var(--dm-purple);">Invocar</button>
+                    <div class="input-group"><label>Nombre del Monstruo Activo</label><input type="text" id="dm-enemy-name" value="Goblin"></div>
+                    <button onclick="invocarMonstruoDM()" style="background-color: var(--dm-purple); margin-top:14px;">Invocar 👾</button>
+                </div>
+                <div class="combat-metrics" style="margin-top: 8px;">
+                    <div class="metric-box"><label>❤️ HP</label><input type="number" id="m-hp" value="7"></div>
+                    <div class="metric-box"><label>🛡️ CA</label><input type="number" id="m-ca" value="13"></div>
+                    <div class="metric-box"><label>CR</label><input type="text" id="m-cr" value="1/4"></div>
                 </div>
             </div>
         </div>
@@ -265,115 +314,209 @@
 
         let peer = null; 
         let conexiones = [];
+        let tokenSeleccionadoParaEstado = null;
 
-        // --- SISTEMA DIRECTO POR PALABRA CLAVE / NOMBRE DE SALA ---
+        // --- BIBLIOTECA DE DATOS EXPRESO ---
+        const biblioteca = {
+            heroes: {
+                guerrero: { nombre: "Garith", nivel: 1, fue: 16, des: 12, con: 15, int: 9, sab: 11, car: 13, ca: 18, hp: 12 },
+                mago: { nombre: "Elysia", nivel: 1, fue: 8, des: 14, con: 12, int: 16, sab: 13, car: 10, ca: 12, hp: 7 },
+                picaro: { nombre: "Zev", nivel: 1, fue: 10, des: 16, con: 13, int: 12, sab: 10, car: 14, ca: 14, hp: 9 }
+            },
+            monstruos: {
+                goblin: { nombre: "Goblin Rastrero", hp: 7, ca: 13, cr: "1/4" },
+                orco: { nombre: "Orco Berserker", hp: 15, ca: 13, cr: "1" },
+                dragon: { nombre: "Dragón Joven", hp: 110, ca: 18, cr: "6" }
+            }
+        };
+
+        function cargarHeroeBiblioteca() {
+            const clave = document.getElementById('lib-heroes').value;
+            if(!clave) return;
+            const h = biblioteca.heroes[clave];
+            document.getElementById('pc-name').value = h.nombre;
+            document.getElementById('pc-level').value = h.nivel;
+            document.getElementById('s-fue').value = h.fue; document.getElementById('s-des').value = h.des;
+            document.getElementById('s-con').value = h.con; document.getElementById('s-int').value = h.int;
+            document.getElementById('s-sab').value = h.sab; document.getElementById('s-car').value = h.car;
+            document.getElementById('pc-ca').value = h.ca;
+            document.getElementById('pc-hp').value = h.hp; document.getElementById('pc-hpmax').value = h.hp;
+            document.getElementById('username').value = h.nombre;
+        }
+
+        function cargarMonstruoBiblioteca() {
+            const clave = document.getElementById('lib-monstruos').value;
+            if(!clave) return;
+            const m = biblioteca.monstruos[clave];
+            document.getElementById('dm-enemy-name').value = m.nombre;
+            document.getElementById('m-hp').value = m.hp;
+            document.getElementById('m-ca').value = m.ca;
+            document.getElementById('m-cr').value = m.cr;
+        }
+
+        // --- SINTETIZADOR DE EFECTOS DE SONIDO ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function reproducirSonidoMecanico(tipo) {
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                
+                if (tipo === 'dado') {
+                    osc.type = 'triangle'; osc.frequency.setValueAtTime(120, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.15);
+                    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                    gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+                    osc.start(); osc.stop(audioCtx.currentTime + 0.2);
+                } else if (tipo === 'token') {
+                    osc.type = 'sine'; osc.frequency.setValueAtTime(180, audioCtx.currentTime);
+                    osc.frequency.setValueAtTime(90, audioCtx.currentTime + 0.05);
+                    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                    gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                    osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+                }
+            } catch(e){}
+        }
+
+        function conmutarModoOscuro() {
+            document.body.classList.toggle('modo-oscuro');
+        }
+
+        // --- CONEXIÓN ---
         function crearSalaPersonalizada() {
             const nombreSala = document.getElementById('custom-room-id').value.trim().toLowerCase();
-            
-            if (!nombreSala) {
-                alert("Escribe una palabra o números para crear la sala.");
-                return;
-            }
-
+            if (!nombreSala) return alert("Escribe un nombre.");
             if (peer) peer.destroy();
             conexiones = [];
-            document.getElementById('mi-id').innerText = "Creando...";
+            document.getElementById('mi-id').innerText = "Abriendo...";
 
-            // Crea el peer usando EXACTAMENTE el nombre que ingresaste
             peer = new Peer(nombreSala);
-
-            peer.on('open', (id) => { 
-                document.getElementById('mi-id').innerText = "En la sala: " + id;
-                document.getElementById('mi-id').style.color = "#10b981";
-            });
-
-            peer.on('connection', (conn) => { 
-                configurarConexion(conn); 
-            });
-
-            peer.on('error', (err) => {
-                console.error(err);
-                if(err.type === 'unavailable-id') {
-                    alert("Ese nombre de sala ya está en uso por alguien más. ¡Prueba otra palabra!");
-                } else {
-                    alert("Error al conectar al sistema de salas.");
-                }
-                document.getElementById('mi-id').innerText = "Error";
-                document.getElementById('mi-id').style.color = "var(--accent-red)";
-            });
+            peer.on('open', (id) => { document.getElementById('mi-id').innerText = "Sala: " + id; });
+            peer.on('connection', (conn) => { configurarConexion(conn); });
         }
 
         function conectarAlDM() {
             const idDestino = document.getElementById('peer-id-destino').value.trim().toLowerCase();
-            
-            if (!idDestino) {
-                alert("Por favor, escribe el nombre de la sala a la que te quieres unir.");
-                return;
-            }
-
-            // Si el jugador no ha creado sala, le inicializamos una conexión temporal oculta para poder transmitir
+            if (!idDestino) return alert("Pon un ID válido.");
             if (!peer || peer.destroyed) {
                 peer = new Peer();
-                peer.on('open', () => {
-                    ejecutarConexionDirecta(idDestino);
-                });
+                peer.on('open', () => { configurarConexion(peer.connect(idDestino)); });
                 peer.on('connection', (conn) => { configurarConexion(conn); });
             } else {
-                ejecutarConexionDirecta(idDestino);
+                configurarConexion(peer.connect(idDestino));
             }
-        }
-
-        function ejecutarConexionDirecta(idDestino) {
-            const conn = peer.connect(idDestino);
-            configurarConexion(conn);
         }
 
         function configurarConexion(conn) {
             conexiones.push(conn);
-            conn.on('open', () => {
-                console.log("¡Conectado exitosamente a la sala!");
-                if(peer.id && peer.id.length < 15) {
-                    // Si tiene un ID corto/personalizado es porque es el dueño de la sala
-                } else {
-                    document.getElementById('mi-id').innerText = "Unido a sala ajena";
-                    document.getElementById('mi-id').style.color = "#3b82f6";
-                }
-            });
             conn.on('data', (data) => {
-                if (data.tipo === 'dado') mostrarLogDado(data.usuario, data.caras, data.resultado);
-                else if (data.tipo === 'mover-token') { const t = document.getElementById(data.id); if (t) { t.style.left = data.x + "px"; t.style.top = data.y + "px"; } }
+                if (data.tipo === 'dado') { mostrarLogDado(data.usuario, data.caras, data.resultado); reproducirSonidoMecanico('dado'); }
+                else if (data.tipo === 'mover-token') { const t = document.getElementById(data.id); if (t) { t.style.left = data.x + "px"; t.style.top = data.y + "px"; reproducirSonidoMecanico('token'); } }
                 else if (data.tipo === 'crear-token') crearTokenVisual(data.id, data.texto, data.clase, data.x, data.y);
                 else if (data.tipo === 'dibujo-muro') dibujarMuroSegmento(data.x1, data.y1, data.x2, data.y2, data.color);
                 else if (data.tipo === 'dibujo-limpiar') ctx.clearRect(0, 0, canvas.width, canvas.height);
+                else if (data.tipo === 'estado-token') actualizarEstadoVisualToken(data.id, data.emoj);
             });
         }
-
         function enviarDatos(data) { conexiones.forEach(conn => { if (conn.open) conn.send(data); }); }
 
-        // --- MANEJO DE INTERFAZ ---
-        const barraAcciones = document.getElementById('barra-acciones');
-        hacerElementoFlotanteArraastable(barraAcciones);
+        // --- LANZAMIENTO DE DADOS ---
+        function lanzarDado(caras) {
+            const res = Math.floor(Math.random() * caras) + 1;
+            const miNombre = document.getElementById('username').value.trim() || "Héroe";
+            mostrarLogDado(miNombre, caras, res);
+            reproducirSonidoMecanico('dado');
+            enviarDatos({ tipo: 'dado', usuario: miNombre, caras: caras, resultado: res });
+        }
+        function mostrarLogDado(u, c, r) {
+            const log = document.getElementById('log-dados');
+            log.innerHTML += `<div>🎲 <b>${u}</b> (d${c}): ${r}</div>`;
+            log.scrollTop = log.scrollHeight;
+        }
 
+        // --- SISTEMA DE TOKENS Y ESTADOS CONDICIONALES ---
+        const tablero = document.getElementById('grid-tablero');
+        function crearTokenLocal(texto, tipo) {
+            const tokenId = 'token-' + Date.now();
+            const clase = tipo === 'enemigo' ? 'token enemigo' : 'token';
+            let etiqueta = texto;
+            if (tipo === 'jugador' && !esDM) etiqueta = (document.getElementById('username').value || "PJ").substring(0,4);
+            if (tipo === 'enemigo' && esDM) etiqueta = document.getElementById('dm-enemy-name').value.substring(0,4);
+            
+            crearTokenVisual(tokenId, etiqueta, clase, 2, 2);
+            enviarDatos({ tipo: 'crear-token', id: tokenId, texto: etiqueta, clase: clase, x: 2, y: 2 });
+        }
+
+        function crearTokenVisual(id, texto, clase, x, y) {
+            if (document.getElementById(id)) return;
+            const token = document.createElement('div');
+            token.id = id; token.className = clase; token.innerText = texto;
+            token.style.left = x + "px"; token.style.top = y + "px";
+            
+            // Clic derecho o sostenido abre menú de estados condicionales
+            token.oncontextmenu = (e) => {
+                e.preventDefault();
+                abrirMenuCondiciones(id, e.clientX, e.clientY);
+            };
+            
+            hacerArrastrable(token);
+            tablero.appendChild(token);
+        }
+
+        function abrirMenuCondiciones(id, cx, cy) {
+            tokenSeleccionadoParaEstado = id;
+            const menu = document.getElementById('menu-condiciones');
+            menu.style.display = 'grid';
+            menu.style.left = (cx - tablero.getBoundingClientRect().left + window.scrollX) + 'px';
+            menu.style.top = (cy - tablero.getBoundingClientRect().top + window.scrollY) + 'px';
+        }
+
+        function aplicarEstadoToken(emoj) {
+            if(!tokenSeleccionadoParaEstado) return;
+            actualizarEstadoVisualToken(tokenSeleccionadoParaEstado, emoj);
+            enviarDatos({ tipo: 'estado-token', id: tokenSeleccionadoParaEstado, emoj: emoj });
+            document.getElementById('menu-condiciones').style.display = 'none';
+        }
+
+        function actualizarEstadoVisualToken(id, emoj) {
+            const token = document.getElementById(id);
+            if(!token) return;
+            let badge = token.querySelector('.token-badge');
+            if(emoj === '❌') { if(badge) badge.remove(); return; }
+            if(!badge) {
+                badge = document.createElement('div'); badge.className = 'token-badge';
+                token.appendChild(badge);
+            }
+            badge.innerText = emoj;
+        }
+
+        function hacerArrastrable(elemento) {
+            let p1 = 0, p2 = 0, p3 = 0, p4 = 0;
+            elemento.onmousedown = (e) => { e.preventDefault(); document.getElementById('menu-condiciones').style.display = 'none'; p3 = e.clientX; p4 = e.clientY; document.onmouseup = fin; document.onmousemove = movMouse; };
+            elemento.addEventListener('touchstart', (e) => { p3 = e.touches[0].clientX; p4 = e.touches[0].clientY; document.addEventListener('touchend', fin); document.addEventListener('touchmove', movTouch, { passive: false }); }, { passive: false });
+            function movMouse(e) { run(e.clientX, e.clientY); }
+            function movTouch(e) { run(e.touches[0].clientX, e.touches[0].clientY); }
+            function run(cx, cy) {
+                p1 = p3 - cx; p2 = p4 - cy; p3 = cx; p4 = cy;
+                let top = Math.round((elemento.offsetTop - p2) / 40) * 40 + 2;
+                let left = Math.round((elemento.offsetLeft - p1) / 40) * 40 + 2;
+                if (top >= 0 && top <= 760) elemento.style.top = top + "px";
+                if (left >= 0 && left <= 760) elemento.style.left = left + "px";
+            }
+            function fin() {
+                reproducirSonidoMecanico('token');
+                enviarDatos({ tipo: 'mover-token', id: elemento.id, x: parseInt(elemento.style.left), y: parseInt(elemento.style.top) });
+                document.onmouseup = null; document.onmousemove = null;
+                document.removeEventListener('touchend', fin); document.removeEventListener('touchmove', movTouch);
+            }
+        }
+
+        // --- INTERFAZ DM/DIBUJO ---
         function cambiarRol() {
             esDM = !esDM;
-            const body = document.body;
-            const btn = document.getElementById('btn-toggle-rol');
-            const txt = document.getElementById('role-text');
-            const btnFichaTab = document.getElementById('btn-tab-ficha');
-
-            if (esDM) {
-                body.classList.add('dm-mode');
-                btn.innerText = "Modo Jugador 🛡️";
-                btn.style.backgroundColor = "var(--accent-red)";
-                txt.innerText = "Modo: DUNGEON MASTER";
-                btnFichaTab.innerText = "👑 Panel DM";
-            } else {
-                body.classList.remove('dm-mode');
-                btn.innerText = "Ser DM 👑";
-                btn.style.backgroundColor = "var(--dm-purple)";
-                txt.innerText = "Modo: JUGADOR";
-                btnFichaTab.innerText = "🛡️ Ficha";
-            }
+            document.body.classList.toggle('dm-mode', esDM);
+            document.getElementById('role-text').innerText = esDM ? "👑 Rol: DUNGEON MASTER" : "🛡️ Rol: JUGADOR";
+            document.getElementById('btn-toggle-rol').innerText = esDM ? "Modo Jugador 🛡️" : "Ser DM 👑";
         }
 
         function invocarMonstruoDM() {
@@ -381,91 +524,30 @@
             crearTokenLocal(nombre.substring(0,4), 'enemigo');
         }
 
-        function verPanel(idPanel, btn) {
-            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-            document.querySelectorAll('.mobile-nav button').forEach(b => b.classList.remove('active'));
-            if (idPanel !== 'mapa') document.getElementById('panel-' + idPanel).classList.add('active');
-            btn.classList.add('active');
-        }
-
-        function hacerElementoFlotanteArraastable(elm) {
-            let p1 = 0, p2 = 0, p3 = 0, p4 = 0;
-            elm.onmousedown = (e) => { if(e.target.tagName === 'BUTTON' || e.target.tagName === 'SELECT' || e.target.tagName === 'INPUT') return; e.preventDefault(); p3 = e.clientX; p4 = e.clientY; document.onmouseup = clausura; document.onmousemove = movM; };
-            elm.addEventListener('touchstart', (e) => { if(e.target.tagName === 'BUTTON' || e.target.tagName === 'SELECT' || e.target.tagName === 'INPUT') return; p3 = e.touches[0].clientX; p4 = e.touches[0].clientY; document.addEventListener('touchend', clausura); document.addEventListener('touchmove', movT, {passive:false}); });
-            function movM(e) { calc(e.clientX, e.clientY); }
-            function movT(e) { calc(e.touches[0].clientX, e.touches[0].clientY); }
-            function calc(cx, cy) { p1 = p3 - cx; p2 = p4 - cy; p3 = cx; p4 = cy; elm.style.top = (elm.offsetTop - p2) + "px"; elm.style.left = (elm.offsetLeft - p1) + "px"; }
-            function clausura() { document.onmouseup = null; document.onmousemove = null; document.removeEventListener('touchend', clausura); document.removeEventListener('touchmove', movT); }
-        }
-
-        // --- DIBUJO ---
-        ctx.lineWidth = 4; ctx.lineCap = 'square';
+        // --- MOTOR DE DIBUJO ---
         function obtenerPuntoRejillaCercano(clientX, clientY) {
             const rect = canvas.getBoundingClientRect();
             const xLienzo = clientX - rect.left; const yLienzo = clientY - rect.top;
             const celdaX = Math.floor(xLienzo / TAMANO_CELDA); const celdaY = Math.floor(yLienzo / TAMANO_CELDA);
-            const izquierda = celdaX * TAMANO_CELDA; const derecha = izquierda + TAMANO_CELDA;
-            const arriba = celdaY * TAMANO_CELDA; const abajo = arriba + TAMANO_CELDA;
-            const distIzquierda = Math.abs(xLienzo - izquierda); const distDerecha = Math.abs(xLienzo - derecha);
-            const distArriba = Math.abs(yLienzo - arriba); const distAbajo = Math.abs(yLienzo - abajo);
-            const minDist = Math.min(distIzquierda, distDerecha, distArriba, distAbajo);
-            if (minDist === distIzquierda) return { x1: izquierda, y1: arriba, x2: izquierda, y2: abajo };
-            if (minDist === distDerecha) return { x1: derecha, y1: arriba, x2: derecha, y2: abajo };
-            if (minDist === distArriba) return { x1: izquierda, y1: arriba, x2: derecha, y2: arriba };
-            return { x1: izquierda, y1: abajo, x2: derecha, y2: abajo };
+            const izq = celdaX * TAMANO_CELDA; const der = izq + TAMANO_CELDA;
+            const arr = celdaY * TAMANO_CELDA; const aba = arr + TAMANO_CELDA;
+            if (Math.min(Math.abs(xLienzo - izq), Math.abs(xLienzo - der)) < Math.min(Math.abs(yLienzo - arr), Math.abs(yLienzo - aba))) {
+                return Math.abs(xLienzo - izq) < Math.abs(xLienzo - der) ? { x1: izq, y1: arr, x2: izq, y2: aba } : { x1: der, y1: arr, x2: der, y2: aba };
+            }
+            return Math.abs(yLienzo - arr) < Math.abs(yLienzo - aba) ? { x1: izq, y1: arr, x2: der, y2: arr } : { x1: izq, y1: aba, x2: der, y2: aba };
         }
-
-        function dibujarMuroSegmento(x1, y1, x2, y2, color) { ctx.strokeStyle = color; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); }
-        function manejarInicioDibujo(e) { if (!esDM) return; dibujando = true; manejarMuroTrazado(e); }
-        function manejarMuroTrazado(e) {
-            if (!dibujando || !esDM) return;
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX; const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            const seg = obtenerPuntoRejillaCercano(clientX, clientY); const color = document.getElementById('color-pincel').value;
-            dibujarMuroSegmento(seg.x1, seg.y1, seg.x2, seg.y2, color);
-            enviarDatos({ tipo: 'dibujo-muro', x1: seg.x1, y1: seg.y1, x2: seg.x2, y2: seg.y2, color: color });
-        }
-
-        canvas.addEventListener('mousedown', manejarInicioDibujo); canvas.addEventListener('mousemove', manejarMuroTrazado); window.addEventListener('mouseup', () => dibujando = false);
-        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); manejarInicioDibujo(e); }, { passive: false }); canvas.addEventListener('touchmove', (e) => { e.preventDefault(); manejarMuroTrazado(e); }, { passive: false }); canvas.addEventListener('touchend', () => dibujando = false);
+        function dibujarMuroSegmento(x1, y1, x2, y2, color) { ctx.lineWidth = 4; ctx.strokeStyle = color; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); }
+        canvas.onmousedown = (e) => { if (!esDM) return; dibujando = true; const seg = obtenerPuntoRejillaCercano(e.clientX, e.clientY); const c = document.getElementById('color-pincel').value; dibujarMuroSegmento(seg.x1, seg.y1, seg.x2, seg.y2, c); enviarDatos({ tipo: 'dibujo-muro', x1: seg.x1, y1: seg.y1, x2: seg.x2, y2: seg.y2, color: c }); };
+        window.onmouseup = () => dibujando = false;
         function limpiarDibujoLocal() { ctx.clearRect(0, 0, canvas.width, canvas.height); enviarDatos({ tipo: 'dibujo-limpiar' }); }
 
-        // --- DADOS ---
-        function lanzarDado(caras) {
-            const res = Math.floor(Math.random() * caras) + 1; const miNombre = document.getElementById('username').value.trim() || "Héroe";
-            mostrarLogDado(miNombre, caras, res); enviarDatos({ tipo: 'dado', usuario: miNombre, caras: caras, resultado: res });
-        }
-        function mostrarLogDado(u, c, r) { const log = document.getElementById('log-dados'); log.innerHTML += `<div>🎲 <b>${u}</b> (d${c}): ${r}</div>`; log.scrollTop = log.scrollHeight; }
-
-        // --- TOKENS ---
-        const tablero = document.getElementById('grid-tablero');
-        function crearTokenLocal(texto, tipo) {
-            const tokenId = 'token-' + Date.now(); const clase = tipo === 'enemigo' ? 'token enemigo' : 'token';
-            let etiqueta = texto; if (tipo === 'jugador' && !esDM) etiqueta = (document.getElementById('username').value || "PJ").substring(0,4);
-            crearTokenVisual(tokenId, etiqueta, clase, 2, 2); enviarDatos({ tipo: 'crear-token', id: tokenId, texto: etiqueta, clase: clase, x: 2, y: 2 });
-        }
-        function crearTokenVisual(id, texto, clase, x, y) {
-            if (document.getElementById(id)) return;
-            const token = document.createElement('div'); token.id = id; token.className = clase; token.innerText = texto;
-            token.style.left = x + "px"; token.style.top = y + "px"; hacerArrastrable(token); tablero.appendChild(token);
-        }
-        function hacerArrastrable(elemento) {
+        // --- MOVIMIENTO DE BARRA ACCIONES ---
+        hacerArrastrableBarra(document.getElementById('barra-acciones'));
+        function hacerArrastrableBarra(elm) {
             let p1 = 0, p2 = 0, p3 = 0, p4 = 0;
-            elemento.onmousedown = (e) => { e.preventDefault(); p3 = e.clientX; p4 = e.clientY; document.onmouseup = fin; document.onmousemove = movMouse; };
-            elemento.addEventListener('touchstart', (e) => { e.preventDefault(); p3 = e.touches[0].clientX; p4 = e.touches[0].clientY; document.addEventListener('touchend', fin); document.addEventListener('touchmove', movTouch, { passive: false }); }, { passive: false });
-            function movMouse(e) { run(e.clientX, e.clientY); }
-            function movTouch(e) { run(e.touches[0].clientX, e.touches[0].clientY); }
-            function run(cx, cy) {
-                p1 = p3 - cx; p2 = p4 - cy; p3 = cx; p4 = cy;
-                let top = Math.round((elemento.offsetTop - p2) / 40) * 40 + 2; let left = Math.round((elemento.offsetLeft - p1) / 40) * 40 + 2;
-                if (top >= 0 && top <= 760) elemento.style.top = top + "px"; if (left >= 0 && left <= 760) elemento.style.left = left + "px";
-                enviarDatos({ tipo: 'mover-token', id: elemento.id, x: left, y: top });
-            }
-            function fin() { document.onmouseup = null; document.onmousemove = null; document.removeEventListener('touchend', fin); document.removeEventListener('touchmove', movTouch); }
+            elm.onmousedown = (e) => { if(e.target.tagName === 'BUTTON' || e.target.tagName === 'SELECT') return; p3 = e.clientX; p4 = e.clientY; document.onmouseup = () => { document.onmouseup = null; document.onmousemove = null; }; document.onmousemove = (ev) => { p1 = p3 - ev.clientX; p2 = p4 - ev.clientY; p3 = ev.clientX; p4 = ev.clientY; elm.style.top = (elm.offsetTop - p2) + "px"; elm.style.left = (elm.offsetLeft - p1) + "px"; }; };
         }
-        function cambiarTab(tabId, btn) {
-            document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none'); document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(tabId).style.display = 'block'; btn.classList.add('active');
-        }
+        window.onclick = (e) => { if(!e.target.closest('.token') && !e.target.closest('.menu-estados')) document.getElementById('menu-condiciones').style.display = 'none'; }
     </script>
 </body>
 </html>
