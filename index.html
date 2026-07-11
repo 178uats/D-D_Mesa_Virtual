@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>D&D Mesa Táctica - Configuración de Red IP</title>
+    <title>D&D Mesa Táctica - Salas Simples</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root {
@@ -131,36 +131,26 @@
             </div>
         </div>
 
-        <h2>🌐 Conexión de Red / Servidor</h2>
-        <div class="card-box" style="display: flex; flex-direction: column; gap: 6px;">
-            <div class="form-row">
-                <div class="input-group">
-                    <label>IP o Host Servidor:</label>
-                    <input type="text" id="net-host" value="0.peerjs.com" placeholder="ej. 192.168.1.15">
-                </div>
-                <div class="input-group" style="max-width: 75px;">
-                    <label>Puerto:</label>
-                    <input type="number" id="net-port" value="443" placeholder="443">
+        <h2>🌐 Conexión de Salas</h2>
+        <div class="card-box" style="display: flex; flex-direction: column; gap: 8px;">
+            
+            <!-- SECCIÓN CREAR SALA -->
+            <div class="input-group">
+                <label>1. Crear Sala con Nombre:</label>
+                <div style="display: flex; gap: 4px;">
+                    <input type="text" id="custom-room-id" placeholder="ej. mi-sala-77" style="flex: 1;">
+                    <button onclick="crearSalaPersonalizada()" style="background-color: var(--dnd-gold); font-size: 0.75rem;">Crear Sala</button>
                 </div>
             </div>
-            <div class="form-row">
-                <div class="input-group">
-                    <label>Ruta (Path):</label>
-                    <input type="text" id="net-path" value="/" placeholder="/">
-                </div>
-                <div class="input-group" style="max-width: 45%;">
-                    <label>Seguro (SSL):</label>
-                    <select id="net-secure">
-                        <option value="true">Sí (https)</option>
-                        <option value="false">No (http)</option>
-                    </select>
-                </div>
-            </div>
-            <button onclick="inicializarPeer ConConfiguracion()" style="background-color: var(--dnd-gold); font-size: 0.75rem; padding: 5px;">Reconectar Servidor</button>
+
+            <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 4px 0;">
             
-            <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 6px 0;">
+            <!-- ESTADO ACTUAL -->
+            <p style="margin: 0; font-size: 0.75rem;">Tu Estado / Sala Activa: <b id="mi-id" style="color: var(--accent-red);">Sin Sala</b></p>
             
-            <p style="margin: 0 0 4px 0; font-size: 0.75rem;">Tu ID de Red: <b id="mi-id" style="color: #10b981;">Desconectado</b></p>
+            <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 4px 0;">
+
+            <!-- SECCIÓN UNIRSE A SALA -->
             <div class="input-group">
                 <label>ID de la Sala Destino:</label>
                 <input type="text" id="peer-id-destino" placeholder="Introduce el ID para unirte">
@@ -238,19 +228,6 @@
                 <div class="metric-box"><label>PG Máximos</label><input type="number" value="12"></div>[cite: 1]
             </div>
 
-            <div class="combat-metrics">
-                <div class="metric-box"><label>Velocidad</label><input type="text" value="30 ft"></div>[cite: 1]
-                <div class="metric-box"><label>Dados Golpe</label><input type="text" value="1d10"></div>[cite: 1]
-                <div class="metric-box"><label>Muerte: Éxitos</label><input type="text" value="◯ ◯ ◯" onclick="this.value=this.value==='◯ ◯ ◯'?'🔴 ◯ ◯':(this.value==='🔴 ◯ ◯'?'🔴 🔴 ◯':'🔴 🔴 🔴')" style="cursor:pointer; font-size:0.65rem;"></div>[cite: 1]
-                <div class="metric-box"><label>Muerte: Fallos</label><input type="text" value="◯ ◯ ◯" onclick="this.value=this.value==='◯ ◯ ◯'?'❌ ◯ ◯':(this.value==='❌ ◯ ◯'?'❌ ❌ ◯':'❌ ❌ ❌')" style="cursor:pointer; font-size:0.65rem;"></div>[cite: 1]
-            </div>
-
-            <div class="form-row">
-                <div class="input-group"><label>Competencia</label><input type="text" value="+2" style="text-align:center;"></div>[cite: 1]
-                <div class="input-group"><label>Percepción Pasiva</label><input type="number" value="11" style="text-align:center;"></div>[cite: 1]
-                <div class="input-group" style="max-width:25%;"><label>Inspiración</label><input type="text" value="⬜" style="text-align:center; cursor:pointer;" onclick="this.value=this.value==='⬜'?'🔥':'⬜'"></div>[cite: 1]
-            </div>
-
             <div class="skills-container">
                 <div class="skill-line"><input type="checkbox" checked> <label>Atletismo</label> <input class="mod-val" value="+4"></div>[cite: 1]
                 <div class="skill-line"><input type="checkbox"> <label>Sigilo</label> <input class="mod-val" value="0"></div>[cite: 1]
@@ -260,7 +237,6 @@
             <div class="section-tabs">
                 <button class="tab-btn active" onclick="cambiarTab('tab-atq', this)">Ataques</button>[cite: 1]
                 <button class="tab-btn" onclick="cambiarTab('tab-features', this)">Rasgos / Dotes</button>[cite: 1]
-                <button class="tab-btn" onclick="cambiarTab('tab-otros', this)">Otros</button>[cite: 1]
             </div>
             <div class="tab-content" id="tab-atq">
                 <textarea style="width:95%; height:45px; background:transparent; border:none; resize:none;" placeholder="Espada Larga | +4 Atq | 1d8+2 Daño"></textarea>[cite: 1]
@@ -277,23 +253,6 @@
                     <button onclick="invocarMonstruoDM()" style="background-color: var(--dm-purple);">Invocar</button>
                 </div>
             </div>
-
-            <h2>👾 Stats del Monstruo Activo</h2>
-            <div class="card-box" style="border-color: var(--dnd-gold); display: flex; flex-direction: column; gap: 6px;">
-                <div class="form-row">
-                    <div class="input-group"><label>Criatura</label><input type="text" value="Goblin Líder"></div>
-                    <div class="input-group" style="max-width:70px;"><label>Tipo/CR</label><input type="text" value="Fie, CR 1"></div>
-                </div>
-                <div class="combat-metrics">
-                    <div class="metric-box" style="border-color: var(--accent-red);"><label>HP Act.</label><input type="number" value="22"></div>
-                    <div class="metric-box"><label>HP Max</label><input type="number" value="22"></div>
-                    <div class="metric-box"><label>CA</label><input type="number" value="15"></div>
-                    <div class="metric-box"><label>Vel.</label><input type="text" value="30ft"></div>
-                </div>
-                <div class="input-group">
-                    <textarea style="height:50px; font-size:0.75rem;" placeholder="Cimitarra: +4 al ataque (1d6+2 cortante)"></textarea>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -304,71 +263,81 @@
         let dibujando = false;
         const TAMANO_CELDA = 40;
 
-        // --- SISTEMA PEERJS CON FILTRADO DE IP PERSONALIZABLE ---
         let peer = null; 
         let conexiones = [];
 
-        function inicializarPeerConConfiguracion() {
-            // Destruir instancia previa si existe
-            if (peer) {
-                peer.destroy();
-                document.getElementById('mi-id').innerText = "Reconectando...";
-                conexiones = [];
+        // --- SISTEMA DIRECTO POR PALABRA CLAVE / NOMBRE DE SALA ---
+        function crearSalaPersonalizada() {
+            const nombreSala = document.getElementById('custom-room-id').value.trim().toLowerCase();
+            
+            if (!nombreSala) {
+                alert("Escribe una palabra o números para crear la sala.");
+                return;
             }
 
-            const host = document.getElementById('net-host').value.trim();
-            const puertoStr = document.getElementById('net-port').value.trim();
-            const path = document.getElementById('net-path').value.trim();
-            const seguro = document.getElementById('net-secure').value === "true";
+            if (peer) peer.destroy();
+            conexiones = [];
+            document.getElementById('mi-id').innerText = "Creando...";
 
-            const config = {
-                host: host,
-                port: puertoStr ? parseInt(puertoStr, 10) : 443,
-                path: path,
-                secure: seguro,
-                debug: 3 // Muestra errores críticos en consola de desarrollo
-            };
+            // Crea el peer usando EXACTAMENTE el nombre que ingresaste
+            peer = new Peer(nombreSala);
 
-            // Si se usa el servidor por defecto de PeerJS en la nube, se ajusta el formato idóneo
-            if(host === "0.peerjs.com") {
-                config.key = "peerjs";
-            }
+            peer.on('open', (id) => { 
+                document.getElementById('mi-id').innerText = "En la sala: " + id;
+                document.getElementById('mi-id').style.color = "#10b981";
+            });
 
-            try {
-                peer = new Peer(config);
+            peer.on('connection', (conn) => { 
+                configurarConexion(conn); 
+            });
 
-                peer.on('open', (id) => { 
-                    document.getElementById('mi-id').innerText = id; 
-                });
-
-                peer.on('connection', (conn) => { 
-                    configurarConexion(conn); 
-                });
-
-                peer.on('error', (err) => {
-                    console.error("Error en PeerJS de red:", err.type);
-                    document.getElementById('mi-id').innerText = "Error / Revisa la IP";
-                });
-            } catch(e) {
-                document.getElementById('mi-id').innerText = "Configuración inválida";
-            }
+            peer.on('error', (err) => {
+                console.error(err);
+                if(err.type === 'unavailable-id') {
+                    alert("Ese nombre de sala ya está en uso por alguien más. ¡Prueba otra palabra!");
+                } else {
+                    alert("Error al conectar al sistema de salas.");
+                }
+                document.getElementById('mi-id').innerText = "Error";
+                document.getElementById('mi-id').style.color = "var(--accent-red)";
+            });
         }
 
         function conectarAlDM() {
-            const idDestino = document.getElementById('peer-id-destino').value.trim();
-            if (!peer || peer.destroyed) {
-                alert("Primero inicializa el servidor con el botón amarillo.");
+            const idDestino = document.getElementById('peer-id-destino').value.trim().toLowerCase();
+            
+            if (!idDestino) {
+                alert("Por favor, escribe el nombre de la sala a la que te quieres unir.");
                 return;
             }
-            if (idDestino) { 
-                configurarConexion(peer.connect(idDestino)); 
+
+            // Si el jugador no ha creado sala, le inicializamos una conexión temporal oculta para poder transmitir
+            if (!peer || peer.destroyed) {
+                peer = new Peer();
+                peer.on('open', () => {
+                    ejecutarConexionDirecta(idDestino);
+                });
+                peer.on('connection', (conn) => { configurarConexion(conn); });
+            } else {
+                ejecutarConexionDirecta(idDestino);
             }
+        }
+
+        function ejecutarConexionDirecta(idDestino) {
+            const conn = peer.connect(idDestino);
+            configurarConexion(conn);
         }
 
         function configurarConexion(conn) {
             conexiones.push(conn);
             conn.on('open', () => {
-                console.log("Conectado con éxito a:", conn.peer);
+                console.log("¡Conectado exitosamente a la sala!");
+                if(peer.id && peer.id.length < 15) {
+                    // Si tiene un ID corto/personalizado es porque es el dueño de la sala
+                } else {
+                    document.getElementById('mi-id').innerText = "Unido a sala ajena";
+                    document.getElementById('mi-id').style.color = "#3b82f6";
+                }
             });
             conn.on('data', (data) => {
                 if (data.tipo === 'dado') mostrarLogDado(data.usuario, data.caras, data.resultado);
@@ -381,10 +350,7 @@
 
         function enviarDatos(data) { conexiones.forEach(conn => { if (conn.open) conn.send(data); }); }
 
-        // Inicializar red automáticamente al arrancar la página
-        window.onload = () => { inicializarPeerConConfiguracion(); };
-
-        // --- MANEJO DE INTERFAZ Y BARRA ARRASTRABLE ---
+        // --- MANEJO DE INTERFAZ ---
         const barraAcciones = document.getElementById('barra-acciones');
         hacerElementoFlotanteArraastable(barraAcciones);
 
