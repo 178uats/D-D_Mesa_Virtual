@@ -2,8 +2,8 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>D&D Mesa Táctica Multijugador</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>D&D Mesa Táctica Multijugador Pro</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root {
@@ -25,13 +25,13 @@
             background-color: var(--bg-main);
             color: var(--text-main);
             display: grid;
-            grid-template-columns: 320px 1fr 450px;
+            grid-template-columns: 320px 1fr 420px;
             height: 100vh;
             overflow: hidden;
         }
 
-        /* Utilidades y Formularios */
-        ::-webkit-scrollbar { width: 5px; }
+        /* Componentes de Interfaz */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
         .panel { background-color: var(--bg-panel); border-right: 1px solid var(--border-color); padding: 15px; box-sizing: border-box; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; }
         .panel-sheet { border-right: none; border-left: 1px solid var(--border-color); }
@@ -46,59 +46,75 @@
         button:hover { background-color: var(--accent-red-hover); }
         .btn-sec { background-color: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-main); }
 
-        /* Switch de Rol Master / Jugador */
+        /* Roles (DM / Jugador) */
         .role-indicator { display: flex; justify-content: space-between; align-items: center; background: #09090b; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); }
         .btn-role { background-color: var(--dm-purple); }
 
-        /* Dados y Chat */
+        /* Dados e Historial */
         .dice-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 6px; }
-        #log-dados { background: #09090b; border: 1px solid var(--border-color); border-radius: 4px; padding: 8px; flex-grow: 1; overflow-y: auto; font-family: monospace; font-size: 0.8rem; min-height: 120px; }
+        #log-dados { background: #09090b; border: 1px solid var(--border-color); border-radius: 4px; padding: 8px; flex-grow: 1; overflow-y: auto; font-family: monospace; font-size: 0.8rem; min-height: 100px; }
 
-        /* Centro: Mapa Táctico */
-        .map-area { display: flex; flex-direction: column; align-items: center; justify-content: center; background-color: #18181b; position: relative; overflow: auto; }
-        .map-toolbar { position: absolute; top: 10px; z-index: 10; display: flex; gap: 6px; background: rgba(26,26,30,0.9); padding: 6px; border-radius: 6px; border: 1px solid var(--border-color); }
-        #grid-tablero { width: 600px; height: 600px; background-image: linear-gradient(to right, rgba(255,255,255,0.04) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.04) 1px, transparent 1px); background-size: 40px 40px; background-color: #27272a; border: 2px solid var(--dnd-gold); position: relative; }
+        /* Centro: área de mapa ajustable */
+        .map-area { display: flex; flex-direction: column; background-color: #18181b; position: relative; overflow: hidden; }
+        .map-toolbar { position: absolute; top: 10px; left: 10px; z-index: 10; display: flex; flex-wrap: wrap; gap: 6px; background: rgba(26,26,30,0.95); padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
         
-        .token { width: 36px; height: 36px; border-radius: 50%; background-color: #2563eb; border: 2px solid white; position: absolute; cursor: move; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 10px; user-select: none; box-shadow: 0 4px 6px rgba(0,0,0,0.5); }
+        /* Contenedor con Scroll para Celulares */
+        .map-viewport { flex: 1; overflow: auto; display: block; position: relative; padding: 20px; }
+        
+        #grid-tablero { 
+            width: 800px; 
+            height: 800px; 
+            background-image: linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px); 
+            background-size: 40px 40px; 
+            background-color: #27272a; 
+            border: 3px solid var(--dnd-gold); 
+            position: relative; 
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
+        }
+        
+        /* Lienzo de dibujo */
+        #canvas-dibujo { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
+        body.dm-mode #canvas-dibujo { pointer-events: auto; cursor: crosshair; }
+
+        /* Tokens */
+        .token { width: 36px; height: 36px; border-radius: 50%; background-color: #2563eb; border: 2px solid white; position: absolute; cursor: move; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 10px; user-select: none; z-index: 5; box-shadow: 0 4px 6px rgba(0,0,0,0.5); transform: translate(0, 0); touch-action: none; }
         .token.enemigo { background-color: #dc2626; }
 
-        /* Ficha de Personaje Estilo Oficial Completo */
+        /* Ficha D&D Clásica */
         .dnd-header { background: #09090b; padding: 8px; border-radius: 6px; margin-bottom: 10px; border: 1px dashed var(--dnd-gold); }
         .stats-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; margin-bottom: 10px; }
         .stat-box { background: #09090b; border: 1px solid var(--border-color); border-radius: 4px; text-align: center; padding: 4px; }
         .stat-box span { display: block; font-size: 0.6rem; color: var(--text-muted); font-weight: bold; }
-        .stat-box input { width: 85%; text-align: center; padding: 1px; font-size: 0.85rem; font-weight: bold; border: none; background: transparent; }
+        .stat-box input { width: 85%; text-align: center; padding: 1px; font-size: 0.85rem; font-weight: bold; border: none; background: transparent; color: white; }
         
         .combat-metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-bottom: 10px; }
         .metric-box { background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 4px; padding: 4px; text-align: center; }
         .metric-box.hp { border-color: var(--accent-red); }
         .metric-box label { font-size: 0.6rem; color: var(--text-muted); display: block; font-weight: bold; }
-        .metric-box input { width: 85%; text-align: center; font-weight: bold; font-size: 0.85rem; background: transparent; border: none; }
+        .metric-box input { width: 85%; text-align: center; font-weight: bold; font-size: 0.85rem; background: transparent; border: none; color: white; }
 
-        .skills-container { background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 6px; padding: 6px; font-size: 0.75rem; max-height: 120px; overflow-y: auto; }
+        .skills-container { background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 6px; padding: 6px; font-size: 0.75rem; max-height: 100px; overflow-y: auto; }
         .skill-line { display: flex; align-items: center; gap: 4px; padding: 2px 0; border-bottom: 1px solid #27272a; }
         .skill-line .mod-val { color: var(--dnd-gold); font-weight: bold; margin-left: auto; width: 25px; text-align: right; border: none; background: transparent; }
 
         .section-tabs { display: flex; gap: 2px; margin-top: 8px; }
         .tab-btn { flex: 1; padding: 5px; font-size: 0.7rem; background: var(--bg-main); border: 1px solid var(--border-color); color: var(--text-muted); border-radius: 4px 4px 0 0; }
         .tab-btn.active { background: var(--bg-panel); border-bottom-color: transparent; color: var(--dnd-gold); font-weight: bold; }
-        .tab-content { background: var(--bg-main); border: 1px solid var(--border-color); border-top: none; padding: 8px; min-height: 90px; border-radius: 0 0 4px 4px; }
+        .tab-content { background: var(--bg-main); border: 1px solid var(--border-color); border-top: none; padding: 8px; min-height: 80px; border-radius: 0 0 4px 4px; }
 
-        /* Vistas condicionales de Rol */
+        /* Estilos Condicionales de Rol */
         .dm-only { display: none !important; }
         body.dm-mode .player-only { display: none !important; }
         body.dm-mode .dm-only { display: flex !important; }
-        body.dm-mode { grid-template-columns: 320px 1fr 380px; }
         body.dm-mode h2 { color: var(--dm-purple); border-bottom-color: var(--dm-purple); }
 
-        /* 📱 RESPONSIVO CELULARES */
+        /* 📱 RESPONSIVO OPTIMIZADO PARA MÓVILES */
         @media (max-width: 900px) {
             body { grid-template-columns: 1fr; grid-template-rows: 1fr 50px; }
             .panel { position: fixed; top: 0; left: 0; width: 100vw; height: calc(100vh - 50px); z-index: 100; display: none; }
             .panel.active { display: flex; }
             .map-area { width: 100vw; height: calc(100vh - 50px); }
             
-            /* Barra de navegación inferior móvil */
             .mobile-nav { display: grid !important; grid-template-columns: repeat(3, 1fr); background: #09090b; border-top: 1px solid var(--border-color); z-index: 200; position: fixed; bottom: 0; width: 100vw; height: 50px; }
             .mobile-nav button { background: transparent; color: var(--text-muted); border: none; border-radius: 0; font-size: 0.75rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
             .mobile-nav button.active { color: var(--accent-red); font-weight: bold; background: var(--bg-panel); }
@@ -109,14 +125,14 @@
 </head>
 <body>
 
-    <!-- NAV INFERIOR PARA CELULARES -->
+    <!-- MENÚ COMPACTO DE NAVEGACIÓN INFERIOR (SÓLO CELULARES) -->
     <div class="mobile-nav">
         <button class="active" onclick="verPanel('mapa', this)">🗺️ Mapa</button>
-        <button onclick="verPanel('herramientas', this)">🎲 Dados</button>
+        <button onclick="verPanel('herramientas', this)">🎲 Panel Izq</button>
         <button onclick="verPanel('ficha', this)" id="btn-tab-ficha">🛡️ Ficha</button>
     </div>
 
-    <!-- COLUMNA IZQUIERDA: Herramientas y Conexión -->
+    <!-- COLUMNA IZQUIERDA -->
     <div class="panel" id="panel-herramientas">
         <div class="role-indicator">
             <span id="role-text" style="font-weight: bold; font-size:0.85rem;">Modo: JUGADOR</span>
@@ -126,16 +142,16 @@
         <h2>👤 Identidad</h2>
         <div class="card-box">
             <div class="input-group">
-                <label>Tu Nombre:</label>
-                <input type="text" id="username" value="Aventurero1" onchange="actualizarNombreToken()">
+                <label>Tu Nombre de Usuario:</label>
+                <input type="text" id="username" value="Héroe1">
             </div>
         </div>
 
         <h2>🌐 Sala Online</h2>
         <div class="card-box">
-            <p style="margin: 0 0 6px 0; font-size: 0.75rem;">ID de Mesa: <b id="mi-id" style="color: #10b981;">Conectando...</b></p>
+            <p style="margin: 0 0 6px 0; font-size: 0.75rem;">ID Mesa: <b id="mi-id" style="color: #10b981;">Conectando...</b></p>
             <div class="input-group">
-                <input type="text" id="peer-id-destino" placeholder="Pegar ID del Amigo/DM">
+                <input type="text" id="peer-id-destino" placeholder="Pegar ID del DM/Amigo">
                 <button onclick="conectarAlDM()" style="margin-top: 4px; background-color: #10b981;">Unirse a Mesa</button>
             </div>
         </div>
@@ -157,29 +173,43 @@
         <div id="log-dados"></div>
     </div>
 
-    <!-- CENTRO: Mapa Táctico -->
+    <!-- CENTRO: MAPA TÁCTICO -->
     <div class="map-area" id="panel-mapa">
         <div class="map-toolbar">
-            <button onclick="crearTokenLocal('PJ', 'jugador')">+ Añadir Mi Héroe</button>
-            <button onclick="crearTokenLocal('E', 'enemigo')" class="dm-only" style="background-color: #dc2626;">+ Invocar Monstruo (DM)</button>
+            <button onclick="crearTokenLocal('PJ', 'jugador')">⚔️ Mi Token</button>
+            <button onclick="crearTokenLocal('E', 'enemigo')" class="dm-only" style="background-color: #dc2626;">😈 Monstruo</button>
+            
+            <!-- Herramientas de dibujo exclusivas del DM -->
+            <div class="dm-only" style="align-items:center; gap:4px; margin-left:6px; border-left:1px solid var(--border-color); padding-left:6px;">
+                <label style="font-size:0.65rem; color:var(--text-muted);">PINCEL:</label>
+                <select id="color-pincel" style="padding:2px; font-size:0.75rem;">
+                    <option value="#ef4444">🔴 Rojo</option>
+                    <option value="#000000">⚫ Negro</option>
+                    <option value="#3b82f6">🔵 Azul</option>
+                    <option value="#22c55e">🟢 Verde</option>
+                </select>
+                <button onclick="limpiarDibujoLocal()" style="background:#3f3f46; padding:4px 8px; font-size:0.75rem;">🗑️ Limpiar</button>
+            </div>
         </div>
-        <div id="grid-tablero"></div>
+        
+        <!-- Viewport táctil deslizable -->
+        <div class="map-viewport">
+            <div id="grid-tablero">
+                <canvas id="canvas-dibujo" width="800" height="800"></canvas>
+            </div>
+        </div>
     </div>
 
-    <!-- COLUMNA DERECHA: Ficha de Jugador O Panel de DM -->
+    <!-- COLUMNA DERECHA: FICHA / PANEL DM -->
     <div class="panel panel-sheet" id="panel-ficha">
         
-        <!-- VISTA EXCLUSIVA: JUGADOR (FICHA OFICIAL COMPLETA) -->
+        <!-- VISTA DE JUGADOR -->
         <div class="player-only" style="display: flex; flex-direction: column; gap: 10px; width: 100%;">
             <h2>🛡️ Ficha de Personaje</h2>
             <div class="dnd-header">
                 <div class="form-row">
-                    <div class="input-group"><label>Nombre Personaje</label><input type="text" id="char-name" value="Garith"></div>
-                    <div class="input-group" style="max-width: 60px;"><label>Nivel</label><input type="number" value="1"></div>
-                </div>
-                <div class="form-row">
-                    <div class="input-group"><label>Clase y Subclase</label><input type="text" value="Paladín"></div>
-                    <div class="input-group"><label>Especie / Trasfondo</label><input type="text" value="Humano / Soldado"></div>[cite: 1]
+                    <div class="input-group"><label>Nombre</label><input type="text" id="char-name" value="Garith"></div>
+                    <div class="input-group" style="max-width: 50px;"><label>Nivel</label><input type="number" value="1"></div>
                 </div>
             </div>
 
@@ -193,78 +223,59 @@
             </div>
 
             <div class="combat-metrics">
-                <div class="metric-box"><label>Armadura CA</label><input type="number" value="18"></div>[cite: 1]
-                <div class="metric-box"><label>Iniciativa</label><input type="number" value="0"></div>[cite: 1]
-                <div class="metric-box"><label>Velocidad</label><input type="text" value="30 ft"></div>[cite: 1]
-                <div class="metric-box hp"><label>PG Actuales</label><input type="number" value="12"></div>[cite: 1]
-            </div>
-
-            <!-- Nuevos Campos Agregados para Completar la Ficha Oficial -->
-            <div class="combat-metrics">
-                <div class="metric-box"><label>PG Máximos</label><input type="number" value="12"></div>[cite: 1]
-                <div class="metric-box"><label>Dados Golpe</label><input type="text" value="1d10"></div>[cite: 1]
-                <div class="metric-box"><label>Muerte: Éxitos</label><input type="text" value="◯ ◯ ◯" onclick="this.value=this.value==='◯ ◯ ◯'?'🔴 ◯ ◯':(this.value==='🔴 ◯ ◯'?'🔴 🔴 ◯':'🔴 🔴 🔴')" style="cursor:pointer; font-size:0.7rem;"></div>[cite: 1]
-                <div class="metric-box"><label>Muerte: Fallos</label><input type="text" value="◯ ◯ ◯" onclick="this.value=this.value==='◯ ◯ ◯'?'❌ ◯ ◯':(this.value==='❌ ◯ ◯'?'❌ ❌ ◯':'❌ ❌ ❌')" style="cursor:pointer; font-size:0.7rem;"></div>[cite: 1]
-            </div>
-
-            <div class="form-row">
-                <div class="input-group" style="max-width:30%;"><label>Competencia</label><input type="text" value="+2" style="text-align:center;"></div>[cite: 1]
-                <div class="input-group"><label>Percepción Pasiva</label><input type="number" value="11" style="text-align:center;"></div>[cite: 1]
-                <div class="input-group" style="max-width:25%;"><label>Inspiración</label><input type="text" value="⬜" style="text-align:center; cursor:pointer;" onclick="this.value=this.value==='⬜'?'🔥':'⬜'"></div>[cite: 1]
+                <div class="metric-box"><label>CA</label><input type="number" value="18"></div>
+                <div class="metric-box"><label>Inic.</label><input type="number" value="0"></div>
+                <div class="metric-box hp"><label>HP Act.</label><input type="number" value="12"></div>
+                <div class="metric-box"><label>HP Max</label><input type="number" value="12"></div>
             </div>
 
             <div class="skills-container">
-                <div class="skill-line"><input type="checkbox" checked> <label>Atletismo (Fue)</label> <input class="mod-val" value="+4"></div>[cite: 1]
-                <div class="skill-line"><input type="checkbox"> <label>Sigilo (Des)</label> <input class="mod-val" value="0"></div>[cite: 1]
-                <div class="skill-line"><input type="checkbox"> <label>Historia (Int)</label> <input class="mod-val" value="-1"></div>[cite: 1]
-                <div class="skill-line"><input type="checkbox" checked> <label>Medicina (Sab)</label> <input class="mod-val" value="+3"></div>[cite: 1]
-                <div class="skill-line"><input type="checkbox" checked> <label>Percepción (Sab)</label> <input class="mod-val" value="+3"></div>[cite: 1]
-                <div class="skill-line"><input type="checkbox"> <label>Persuasión (Car)</label> <input class="mod-val" value="+2"></div>[cite: 1]
+                <div class="skill-line"><input type="checkbox" checked> <label>Atletismo</label> <input class="mod-val" value="+4"></div>
+                <div class="skill-line"><input type="checkbox"> <label>Sigilo</label> <input class="mod-val" value="0"></div>
+                <div class="skill-line"><input type="checkbox" checked> <label>Percepción</label> <input class="mod-val" value="+3"></div>
             </div>
 
             <div class="section-tabs">
-                <button class="tab-btn active" onclick="cambiarTab('tab-atq', this)">Ataques</button>[cite: 1]
-                <button class="tab-btn" onclick="cambiarTab('tab-features', this)">Rasgos / Dotes</button>[cite: 1]
-                <button class="tab-btn" onclick="cambiarTab('tab-otros', this)">Idiomas / Equipo</button>[cite: 1]
+                <button class="tab-btn active" onclick="cambiarTab('tab-atq', this)">Acciones</button>
+                <button class="tab-btn" onclick="cambiarTab('tab-features', this)">Rasgos</button>
             </div>
             <div class="tab-content" id="tab-atq">
-                <textarea style="width:95%; height:60px; background:transparent; border:none; resize:none;" placeholder="Espada Larga | +4 Atq | 1d8+2 Cortante"></textarea>[cite: 1]
+                <textarea style="width:95%; height:50px; background:transparent; border:none; resize:none;" placeholder="Espada Larga | +4 Atq | 1d8+2 Daño"></textarea>
             </div>
             <div class="tab-content" id="tab-features" style="display:none;">
-                <textarea style="width:95%; height:60px; background:transparent; border:none; resize:none;" placeholder="Sentido Divino, Imposición de Manos, Dote: Alerta."></textarea>[cite: 1]
-            </div>
-            <div class="tab-content" id="tab-otros" style="display:none;">
-                <textarea style="width:95%; height:60px; background:transparent; border:none; resize:none;" placeholder="Idiomas: Común, Élfico. Competencia: Armaduras pesadas, Escudos."></textarea>[cite: 1]
+                <textarea style="width:95%; height:50px; background:transparent; border:none; resize:none;" placeholder="Sentido Divino, Imposición de Manos."></textarea>
             </div>
         </div>
 
-        <!-- VISTA EXCLUSIVA: DUNGEON MASTER (HERRAMIENTAS DE CAMPAÑA) -->
+        <!-- VISTA DE DUNGEON MASTER -->
         <div class="dm-only" style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
-            <h2>👑 Panel del Dungeon Master</h2>
-            
+            <h2>👑 Panel de Control DM</h2>
             <div class="card-box" style="border-color: var(--dm-purple);">
-                <h3>Generador Rápido de Monstruos</h3>
+                <h3>Generador de Enemigos</h3>
                 <div class="form-row">
                     <div class="input-group">
-                        <label>Nombre / Iniciales:</label>
-                        <input type="text" id="dm-enemy-name" value="Goblin">
+                        <label>Nombre Corto (Ej: Orco):</label>
+                        <input type="text" id="dm-enemy-name" value="Orco">
                     </div>
                     <button onclick="invocarMonstruoDM()" style="background-color: var(--dm-purple); margin-top:15px;">Invocar</button>
                 </div>
             </div>
 
-            <h3>Seguimiento de Iniciativa Global</h3>
-            <textarea style="height: 100px; font-family: monospace; font-size: 0.8rem;" placeholder="1. Garith - 18&#10;2. Goblin A - 14&#10;3. Mago - 9"></textarea>
+            <h3>Orden de Iniciativa</h3>
+            <textarea style="height: 80px; font-family: monospace;" placeholder="1. Jugador A - 20&#10;2. Orcos - 12"></textarea>
 
-            <h3>Notas Secretas del DM</h3>
-            <textarea style="height: 160px; resize: none;" placeholder="Escribe aquí los secretos de la mazmorra, trampas, stats de monstruos y giros de guión que tus jugadores no deben ver..."></textarea>
+            <h3>Notas Secretas</h3>
+            <textarea style="height: 140px;" placeholder="Escribe aquí las trampas, tesoros ocultos y stats ocultos..."></textarea>
         </div>
-
     </div>
 
     <script>
-        // --- SISTEMA DE CAMBIO DE ROL ---
+        // --- ESTADOS GLOBALES Y ROL ---
         let esDM = false;
+        const canvas = document.getElementById('canvas-dibujo');
+        const ctx = canvas.getContext('2d');
+        let dibujando = false;
+
         function cambiarRol() {
             esDM = !esDM;
             const body = document.body;
@@ -274,7 +285,7 @@
 
             if (esDM) {
                 body.classList.add('dm-mode');
-                btn.innerText = "Ser Jugador 🛡️";
+                btn.innerText = "Modo Jugador 🛡️";
                 btn.style.backgroundColor = "var(--accent-red)";
                 txt.innerText = "Modo: DUNGEON MASTER";
                 btnFichaTab.innerText = "👑 Panel DM";
@@ -292,18 +303,70 @@
             crearTokenLocal(nombre.substring(0,4), 'enemigo');
         }
 
-        // --- RESPONSIVO MÓVIL (PANELES) ---
+        // --- SISTEMA DE DIBUJO MULTIJUGADOR ---
+        ctx.lineWidth = 3;
+        ctx.lineCap = 'round';
+
+        function obtenerCoordenadasLienzo(e) {
+            const rect = canvas.getBoundingClientRect();
+            // Soporte tanto para mouse como para toques de celular
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return {
+                x: clientX - rect.left,
+                y: clientY - rect.top
+            };
+        }
+
+        function empezarDibujo(e) {
+            if (!esDM) return;
+            dibujando = true;
+            const coords = obtenerCoordenadasLienzo(e);
+            ctx.beginPath();
+            ctx.moveTo(coords.x, coords.y);
+            enviarDatos({ tipo: 'dibujo-inicio', x: coords.x, y: coords.y, color: document.getElementById('color-pincel').value });
+        }
+
+        function hacerDibujo(e) {
+            if (!dibujando || !esDM) return;
+            const coords = obtenerCoordenadasLienzo(e);
+            const color = document.getElementById('color-pincel').value;
+            
+            ctx.strokeStyle = color;
+            ctx.lineTo(coords.x, coords.y);
+            ctx.stroke();
+            
+            enviarDatos({ tipo: 'dibujo-trazo', x: coords.x, y: coords.y, color: color });
+        }
+
+        function pararDibujo() { dibujando = false; }
+
+        // Eventos del Mouse para dibujar
+        canvas.addEventListener('mousedown', empezarDibujo);
+        canvas.addEventListener('mousemove', hacerDibujo);
+        window.addEventListener('mouseup', pararDibujo);
+
+        // Eventos Touch de Celular para dibujar
+        canvas.addEventListener('touchstart', (e) => { empezarDibujo(e); });
+        canvas.addEventListener('touchmove', (e) => { hacerDibujo(e); });
+        canvas.addEventListener('touchend', pararDibujo);
+
+        function limpiarDibujoLocal() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            enviarDatos({ tipo: 'dibujo-limpiar' });
+        }
+
+        // --- MANEJO DE PANELES MÓVILES ---
         function verPanel(idPanel, btn) {
             document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
             document.querySelectorAll('.mobile-nav button').forEach(b => b.classList.remove('active'));
-            
             if (idPanel !== 'mapa') {
                 document.getElementById('panel-' + idPanel).classList.add('active');
             }
             btn.classList.add('active');
         }
 
-        // --- RED MULTIJUGADOR P2P (PEERJS) ---
+        // --- CONEXIONES MULTIJUGADOR P2P ---
         let peer = new Peer(); 
         let conexiones = [];
 
@@ -318,8 +381,8 @@
         function configurarConexion(conn) {
             conexiones.push(conn);
             conn.on('open', () => {
-                const miNombre = document.getElementById('username').value.trim() || "Alguien";
-                enviarDatos({ tipo: 'sistema', msg: `⚔️ ${miNombre} se ha conectado.` });
+                const miNombre = document.getElementById('username').value.trim() || "Unido";
+                enviarDatos({ tipo: 'sistema', msg: `⚔️ ${miNombre} se ha unido a la mesa.` });
             });
             conn.on('data', (data) => { procesarDatosRed(data); });
         }
@@ -332,13 +395,17 @@
             else if (data.tipo === 'mover-token') {
                 const token = document.getElementById(data.id);
                 if (token) { token.style.left = data.x + "px"; token.style.top = data.y + "px"; }
-            } else if (data.tipo === 'crear-token') { crearTokenVisual(data.id, data.texto, data.clase, data.x, data.y); }
+            } 
+            else if (data.tipo === 'crear-token') { crearTokenVisual(data.id, data.texto, data.clase, data.x, data.y); }
+            else if (data.tipo === 'dibujo-inicio') { ctx.beginPath(); ctx.moveTo(data.x, data.y); }
+            else if (data.tipo === 'dibujo-trazo') { ctx.strokeStyle = data.color; ctx.lineTo(data.x, data.y); ctx.stroke(); }
+            else if (data.tipo === 'dibujo-limpiar') { ctx.clearRect(0, 0, canvas.width, canvas.height); }
         }
 
-        // --- DADOS ---
+        // --- SISTEMA DE DADOS ---
         function lanzarDado(caras) {
             const resultado = Math.floor(Math.random() * caras) + 1;
-            const miNombre = document.getElementById('username').value.trim() || "Anónimo";
+            const miNombre = document.getElementById('username').value.trim() || "Héroe";
             mostrarLogDado(miNombre, caras, resultado);
             enviarDatos({ tipo: 'dado', usuario: miNombre, caras: caras, resultado: resultado });
         }
@@ -352,7 +419,7 @@
             log.scrollTop = log.scrollHeight;
         }
 
-        // --- TABLERO Y TOKENS (CON SOPORTE TOUCH MÓVIL) ---
+        // --- COMPORTAMIENTO DE LOS TOKENS ---
         const tablero = document.getElementById('grid-tablero');
 
         function crearTokenLocal(texto, tipo) {
@@ -369,7 +436,7 @@
         }
 
         function crearTokenVisual(id, texto, clase, x, y) {
-            if(document.getElementById(id)) return;
+            if (document.getElementById(id)) return;
             const token = document.createElement('div');
             token.id = id; token.className = clase; token.innerText = texto;
             token.style.left = x + "px"; token.style.top = y + "px";
@@ -380,29 +447,46 @@
         function hacerArrastrable(elemento) {
             let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
             
-            // Mouse para PC
-            elemento.onmousedown = arrastrarMouseDown;
-            // Touch para Móviles
-            elemento.ontouchstart = arrastrarTouchStart;
+            elemento.onmousedown = iniciarArrastreMouse;
+            elemento.addEventListener('touchstart', iniciarArrastreTouch, { passive: false });
 
-            function arrastrarMouseDown(e) { e.preventDefault(); pos3 = e.clientX; pos4 = e.clientY; document.onmouseup = cerrarArrastrarElemento; document.onmousemove = elementoArrastrar; }
-            function arrastrarTouchStart(e) { pos3 = e.touches[0].clientX; pos4 = e.touches[0].clientY; document.ontouchend = cerrarArrastrarElemento; document.ontouchmove = elementoTouchArrastrar; }
+            function iniciarArrastreMouse(e) {
+                e.preventDefault();
+                pos3 = e.clientX; pos4 = e.clientY;
+                document.onmouseup = detenerArrastre;
+                document.onmousemove = moverConMouse;
+            }
 
-            function elementoArrastrar(e) { calcularPosicion(e.clientX, e.clientY); }
-            function elementoTouchArrastrar(e) { calcularPosicion(e.touches[0].clientX, e.touches[0].clientY); }
+            function iniciarArrastreTouch(e) {
+                // Previene scroll al arrastrar la ficha/token
+                e.preventDefault(); 
+                pos3 = e.touches[0].clientX; pos4 = e.touches[0].clientY;
+                document.addEventListener('touchend', detenerArrastre);
+                document.addEventListener('touchmove', moverConTouch, { passive: false });
+            }
 
-            function calcularPosicion(clientX, clientY) {
+            function moverConMouse(e) { procesarMovimiento(e.clientX, e.clientY); }
+            function moverConTouch(e) { procesarMovimiento(e.touches[0].clientX, e.touches[0].clientY); }
+
+            function procesarMovimiento(clientX, clientY) {
                 pos1 = pos3 - clientX; pos2 = pos4 - clientY;
                 pos3 = clientX; pos4 = clientY;
+                
+                // Alineación a cuadrícula de rejilla de 40px por celda
                 let nuevoTop = Math.round((elemento.offsetTop - pos2) / 40) * 40 + 2;
                 let nuevoLeft = Math.round((elemento.offsetLeft - pos1) / 40) * 40 + 2;
 
-                if (nuevoTop >= 0 && nuevoTop <= 560) elemento.style.top = nuevoTop + "px";
-                if (nuevoLeft >= 0 && nuevoLeft <= 560) elemento.style.left = nuevoLeft + "px";
+                if (nuevoTop >= 0 && nuevoTop <= 760) elemento.style.top = nuevoTop + "px";
+                if (nuevoLeft >= 0 && nuevoLeft <= 760) elemento.style.left = nuevoLeft + "px";
+                
                 enviarDatos({ tipo: 'mover-token', id: elemento.id, x: nuevoLeft, y: nuevoTop });
             }
 
-            function cerrarArrastrarElemento() { document.onmouseup = null; document.onmousemove = null; document.ontouchend = null; document.ontouchmove = null; }
+            function detenerArrastre() {
+                document.onmouseup = null; document.onmousemove = null;
+                document.removeEventListener('touchend', detenerArrastre);
+                document.removeEventListener('touchmove', moverConTouch);
+            }
         }
 
         function cambiarTab(tabId, btn) {
