@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>D&D Online P2P</title>
+    <!-- Incluimos la librería de PeerJS para la conexión online sin servidor -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #1a1a1a;
+            --panel-color: #2d2d2d;
+            --accent-color: #b31f24;
+            --text-color: #ffffff;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: grid;
+            grid-template-columns: 300px 1fr 300px;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .panel {
+            background-color: var(--panel-color);
+            padding: 15px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            border-right: 2px solid #444;
+            overflow-y: auto;
+        }
+
+        .panel-right { border-right: none; border-left: 2px solid #444; }
+        h2, h3 { margin: 0; color: var(--accent-color); border-bottom: 1px solid #444; padding-bottom: 5px; }
+
+        /* Conectividad */
+        .conexion-box { background: #111; padding: 10px; border-radius: 4px; font-size: 0.85rem; }
+        .conexion-box input { width: 90%; margin-top: 5px; }
+
+        /* Dados */
+        .dice-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
+        button { background-color: var(--accent-color); color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        button:hover { background-color: #e62229; }
+        #log-dados { background: #111; padding: 10px; border-radius: 4px; flex-grow: 1; overflow-y: auto; font-family: monospace; font-size: 0.85rem; min-height: 120px; }
+
+        /* Tablero */
+        .tablero-container { display: flex; flex-direction: column; align-items: center; justify-content: center; background-color: #222; position: relative; }
+        .controles-tablero { position: absolute; top: 10px; z-index: 10; display: flex; gap: 10px; }
+        #tablero { width: 600px; height: 600px; background-image: linear-gradient(to right, #444 1px, transparent 1px), linear-gradient(to bottom, #444 1px, transparent 1px); background-size: 40px 40px; background-color: #333; border: 3px solid var(--accent-color); position: relative; }
+
+        /* Tokens */
+        .token { width: 36px; height: 36px; border-radius: 50%; background-color: #3498db; border: 2px solid white; position: absolute; cursor: move; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 11px; user-select: none; box-shadow: 2px 2px 5px rgba(0,0,0,0.5); }
+        .token.enemigo { background-color: #e74c3c; }
+
+        /* Inputs */
+        .input-group { display: flex; flex-direction: column; gap: 3px; font-size: 0.9rem; }
+        input, textarea { background: #111; border: 1px solid #444; color: white; padding: 6px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+    <!-- PANEL IZQUIERDO: Red y Dados -->
+    <div class="panel">
+        <h2>🌐 Conexión Online</h2>
+        <div class="conexion-box">
+            <p>Tu ID: <b id="mi-id" style="color: #2ecc71;">Conectando...</b></p>
+            <div class="input-group">
+                <label>Unirse al ID del DM:</label>
+                <input type="text" id="peer-id-destino" placeholder="Introduce el ID de tu amigo">
+                <button onclick="conectarAlDM()" style="margin-top: 5px; background: #27ae60;">Conectarse</button>
+            </div>
+        </div>
+
+        <h2>🎲 Lanzador de Dados</h2>
+        <div class="dice-grid">
+            <button onclick="lanzarDado(4)">d4</button>
+            <button onclick="lanzarDado(6)">d6</button>
+            <button onclick="lanzarDado(8)">d8</button>
+            <button onclick="lanzarDado(10)">d10</button>
+            <button onclick="lanzarDado(12)">d12</button>
+            <button onclick="lanzarDado(20)">d20</button>
+        </div>
+        <button onclick="lanzarDado(100)">d100</button>
+        
+        <h3>Historial (Compartido)</h3>
+        <div id="log-dados"></div>
+    </div>
+
+    <!-- CENTRO: Tablero -->
+    <div class="tablero-container">
+        <div class="controles-tablero">
+            <button onclick="crearTokenLocal('PJ', 'jugador')">+ PJ</button>
+            <button onclick="crearTokenLocal('E', 'enemigo')" style="background-color: #e74c3c;">+ Enemigo</button>
+        </div>
+        <div id="tablero"></div>
+    </div>
+
+    <!-- PANEL DERECHO: Ficha -->
+    <div class="panel panel-right">
+        <h2>🛡️ Mini Ficha</h2>
+        <div class="input-group">
+            <label>Nombre:</label>
+            <input type="text" id="char-name" value="Aventurero">
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div class="input-group"><label>Vida (PG):</label><input type="number" value="10"></div>
+            <div class="input-group"><label>Armadura (CA):</label><input type="number" value="10"></div>
+        </div>
+        <div class="input-group" style="flex-grow: 1;">
+            <label>Notas:</label>
+            <textarea style="flex-grow: 1; resize: none;"></textarea>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURACIÓN P2P (PEERJS) ---
+        let peer = new Peer(); 
+        let conexiones = [];
+        let miId = "";
+
+        peer.on('open', (id) => {
+            miId = id;
+            document.getElementById('mi-id').innerText = id;
+        });
+
+        // El DM recibe conexiones de los jugadores
+        peer.on('connection', (conn) => {
+            configurarConexion(conn);
+        });
+
+        function conectarAlDM() {
+            const idDestino = document.getElementById('peer-id-destino').value.trim();
+            if (idDestino) {
+                const conn = peer.connect(idDestino);
+                configurarConexion(conn);
+            }
+        }
+
+        function configurarConexion(conn) {
+            conexiones.push(conn);
+            conn.on('open', () => {
+                enviarDatos({ tipo: 'sistema', msg: '¡Alguien se ha unido a la mesa!' });
+            });
+            conn.on('data', (data) => {
+                procesarDatosRed(data);
+            });
+        }
+
+        function enviarDatos(data) {
+            conexiones.forEach(conn => {
+                if (conn.open) conn.send(data);
+            });
+        }
+
+        function procesarDatosRed(data) {
+            if (data.tipo === 'dado') {
+                mostrarLogDado(data.usuario, data.caras, data.resultado);
+            } else if (data.tipo === 'sistema') {
+                document.getElementById('log-dados').innerHTML += `<div style="color: #f1c40f">${data.msg}</div>`;
+            } else if (data.tipo === 'mover-token') {
+                const token = document.getElementById(data.id);
+                if (token) {
+                    token.style.left = data.x + "px";
+                    token.style.top = data.y + "px";
+                }
+            } else if (data.tipo === 'crear-token') {
+                crearTokenVisual(data.id, data.texto, data.clase, data.x, data.y);
+            }
+        }
+
+        // --- SISTEMA DE DADOS ---
+        function lanzarDado(caras) {
+            const resultado = Math.floor(Math.random() * caras) + 1;
+            const nombre = document.getElementById('char-name').value || "Anónimo";
+            
+            mostrarLogDado(nombre, caras, resultado);
+            enviarDatos({ tipo: 'dado', usuario: nombre, caras: caras, resultado: resultado });
+        }
+
+        function mostrarLogDado(usuario, caras, resultado) {
+            const log = document.getElementById('log-dados');
+            let estilo = "";
+            if (caras === 20 && resultado === 20) estilo = "color: #2ecc71; font-weight:bold;";
+            if (caras === 20 && resultado === 1) estilo = "color: #e74c3c; font-weight:bold;";
+            
+            log.innerHTML += `<div style="${estilo}"><b>${usuario}</b> (d${caras}): ${resultado}</div>`;
+            log.scrollTop = log.scrollHeight;
+        }
+
+        // --- TABLERO Y MULTIJUGADOR ---
+        const tablero = document.getElementById('tablero');
+
+        function crearTokenLocal(texto, tipo) {
+            const tokenId = 'token-' + Date.now();
+            const clase = tipo === 'enemigo' ? 'token enemigo' : 'token';
+            crearTokenVisual(tokenId, texto, clase, 20, 20);
+            
+            // Avisar a los demás
+            enviarDatos({ tipo: 'crear-token', id: tokenId, texto: texto, clase: clase, x: 20, y: 20 });
+        }
+
+        function crearTokenVisual(id, texto, clase, x, y) {
+            if(document.getElementById(id)) return; // Evitar duplicados
+
+            const token = document.createElement('div');
+            token.id = id;
+            token.className = clase;
+            token.innerText = texto;
+            token.style.left = x + "px";
+            token.style.top = y + "px";
+            
+            hacerArrastrable(token);
+            tablero.appendChild(token);
+        }
+
+        function hacerArrastrable(elemento) {
+            let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+            elemento.onmousedown = arrastrarMouseDown;
+
+            function arrastrarMouseDown(e) {
+                e.preventDefault();
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                document.onmouseup = cerrarArrastrarElemento;
+                document.onmousemove = elementoArrastrar;
+            }
+
+            function elementoArrastrar(e) {
+                e.preventDefault();
+                pos1 = pos3 - e.clientX;
+                pos2 = pos4 - e.clientY;
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                
+                let nuevoTop = Math.round((elemento.offsetTop - pos2) / 40) * 40 + 2;
+                let nuevoLeft = Math.round((elemento.offsetLeft - pos1) / 40) * 40 + 2;
+
+                if (nuevoTop >= 0 && nuevoTop <= 560) elemento.style.top = nuevoTop + "px";
+                if (nuevoLeft >= 0 && nuevoLeft <= 560) elemento.style.left = nuevoLeft + "px";
+
+                // Enviar coordenadas en tiempo real a los demás jugadores
+                enviarDatos({ tipo: 'mover-token', id: elemento.id, x: nuevoLeft, y: nuevoTop });
+            }
+
+            function cerrarArrastrarElemento() {
+                document.onmouseup = null;
+                document.onmousemove = null;
+            }
+        }
+    </script>
+</body>
+</html>
