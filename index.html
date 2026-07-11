@@ -159,9 +159,12 @@
             align-items: center;
             justify-content: center;
             font-weight: bold;
-            font-size: 11px;
+            font-size: 10px;
             user-select: none;
             box-shadow: 0 4px 6px -1px rgba(0,0,0,0.5);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
         .token.enemigo { background-color: #dc2626; }
 
@@ -241,6 +244,14 @@
 
     <!-- IZQUIERDA: Herramientas de Juego y Conexión -->
     <div class="panel">
+        <h2>👤 Identidad</h2>
+        <div class="card-box">
+            <div class="input-group">
+                <label>Nombre de Usuario (Tú):</label>
+                <input type="text" id="username" value="Jugador1" placeholder="Ej. ElDM_Xavier">
+            </div>
+        </div>
+
         <h2>🌐 Conectividad Mesa</h2>
         <div class="card-box">
             <p style="margin: 0 0 8px 0; font-size: 0.85rem;">Tu ID de Sala: <b id="mi-id" style="color: #10b981;">Generando...</b></p>
@@ -281,7 +292,7 @@
     <div class="panel panel-sheet">
         <h2>🛡️ Registro de Personaje (D&D)</h2>
         
-        <!-- Encabezado Ficha -->
+        <!-- Encabezado Ficha[cite: 1] -->
         <div class="dnd-header">
             <div class="form-row">
                 <div class="input-group"><label>Nombre Personaje</label><input type="text" id="char-name" value="Garith"></div>
@@ -294,7 +305,7 @@
         </div>
 
         <h3>Atributos Core</h3>
-        <!-- Bloque de Atributos -->
+        <!-- Bloque de Atributos[cite: 1] -->
         <div class="stats-row">
             <div class="stat-box"><span>FUE</span><input type="number" value="16"></div>
             <div class="stat-box"><span>DES</span><input type="number" value="14"></div>
@@ -304,7 +315,7 @@
             <div class="stat-box"><span>CAR</span><input type="number" value="8"></div>
         </div>
 
-        <!-- Métricas Combate Críticas -->
+        <!-- Métricas Combate Críticas[cite: 1] -->
         <div class="combat-metrics">
             <div class="metric-box"><label>Armadura (CA)</label><input type="number" value="16"></div>
             <div class="metric-box"><label>Iniciativa</label><input type="number" value="2"></div>
@@ -312,7 +323,7 @@
             <div class="metric-box" style="border-color: var(--accent-red);"><label>Vida (PG)</label><input type="number" value="12"></div>
         </div>
 
-        <h3>Competencias y Habilidades</h3>
+        <h3>Competencias y Habilidades[cite: 1]</h3>
         <div class="form-row">
             <div class="input-group"><label>Bono Competencia</label><input type="text" value="+2" style="text-align:center; font-weight:bold;"></div>
             <div class="input-group"><label>Percepción Pasiva</label><input type="number" value="11" style="text-align:center;"></div>
@@ -362,6 +373,7 @@
 
         function conectarAlDM() {
             const idDestino = document.getElementById('peer-id-destino').value.trim();
+            const miNombre = document.getElementById('username').value.trim() || "Anónimo";
             if (idDestino) {
                 const conn = peer.connect(idDestino);
                 configurarConexion(conn);
@@ -371,7 +383,8 @@
         function configurarConexion(conn) {
             conexiones.push(conn);
             conn.on('open', () => {
-                enviarDatos({ tipo: 'sistema', msg: '🛡️ ¡Un aventurero se ha unido a la mesa!' });
+                const miNombre = document.getElementById('username').value.trim() || "Anónimo";
+                enviarDatos({ tipo: 'sistema', msg: `🛡️ ¡${miNombre} se ha unido a la mesa!` });
             });
             conn.on('data', (data) => { procesarDatosRed(data); });
         }
@@ -399,9 +412,10 @@
         // --- DADOS ---
         function lanzarDado(caras) {
             const resultado = Math.floor(Math.random() * caras) + 1;
-            const nombre = document.getElementById('char-name').value || "Héroe";
-            mostrarLogDado(nombre, caras, resultado);
-            enviarDatos({ tipo: 'dado', usuario: nombre, caras: caras, resultado: resultado });
+            const miNombre = document.getElementById('username').value.trim() || "Anónimo";
+            
+            mostrarLogDado(miNombre, caras, resultado);
+            enviarDatos({ tipo: 'dado', usuario: miNombre, caras: caras, resultado: resultado });
         }
 
         function mostrarLogDado(usuario, caras, resultado) {
@@ -420,8 +434,16 @@
         function crearTokenLocal(texto, tipo) {
             const tokenId = 'token-' + Date.now();
             const clase = tipo === 'enemigo' ? 'token enemigo' : 'token';
-            crearTokenVisual(tokenId, texto, clase, 2, 2);
-            enviarDatos({ tipo: 'crear-token', id: tokenId, texto: texto, clase: clase, x: 2, y: 2 });
+            
+            // Si es un PJ, usamos las primeras 4 letras del Nombre de Usuario
+            let etiqueta = texto;
+            if (tipo === 'jugador') {
+                const miNombre = document.getElementById('username').value.trim() || "PJ";
+                etiqueta = miNombre.substring(0, 4);
+            }
+
+            crearTokenVisual(tokenId, etiqueta, clase, 2, 2);
+            enviarDatos({ tipo: 'crear-token', id: tokenId, texto: etiqueta, clase: clase, x: 2, y: 2 });
         }
 
         function crearTokenVisual(id, texto, clase, x, y) {
@@ -430,6 +452,7 @@
             token.id = id;
             token.className = clase;
             token.innerText = texto;
+            token.title = texto; // Tooltip al pasar el mouse por encima
             token.style.left = x + "px";
             token.style.top = y + "px";
             hacerArrastrable(token);
