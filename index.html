@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>D&D Online P2P - Mesa Táctica</title>
-    <!-- PeerJS para conexión Multijugador -->
+    <title>D&D Mesa Táctica Multijugador</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root {
@@ -17,6 +16,7 @@
             --text-main: #f4f4f5;
             --text-muted: #a1a1aa;
             --dnd-gold: #d97706;
+            --dm-purple: #7c3aed;
         }
 
         body {
@@ -30,238 +30,117 @@
             overflow: hidden;
         }
 
-        /* Scrollbar personalizado */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: var(--bg-main); }
+        /* Utilidades y Formularios */
+        ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
-
-        /* Estilos de Contenedores / Paneles */
-        .panel {
-            background-color: var(--bg-panel);
-            border-right: 1px solid var(--border-color);
-            padding: 20px;
-            box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            overflow-y: auto;
-        }
-
-        .panel-sheet {
-            border-right: none;
-            border-left: 1px solid var(--border-color);
-            padding: 15px;
-        }
-
-        h2 {
-            font-size: 1.1rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--accent-red);
-            margin: 0 0 5px 0;
-            border-bottom: 2px solid var(--accent-red);
-            padding-bottom: 4px;
-        }
-
-        h3 {
-            font-size: 0.9rem;
-            color: var(--dnd-gold);
-            margin: 10px 0 5px 0;
-            text-transform: uppercase;
-        }
-
-        /* Bloques de Red y Dados */
-        .card-box {
-            background: var(--bg-main);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            padding: 12px;
-        }
-
-        .dice-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 8px;
-            margin-bottom: 8px;
-        }
-
-        button {
-            background-color: var(--accent-red);
-            color: white;
-            border: none;
-            padding: 10px;
-            border-radius: 4px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
+        .panel { background-color: var(--bg-panel); border-right: 1px solid var(--border-color); padding: 15px; box-sizing: border-box; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; }
+        .panel-sheet { border-right: none; border-left: 1px solid var(--border-color); }
+        h2 { font-size: 1rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--accent-red); margin: 0 0 5px 0; border-bottom: 2px solid var(--accent-red); padding-bottom: 4px; }
+        h3 { font-size: 0.85rem; color: var(--dnd-gold); margin: 10px 0 5px 0; text-transform: uppercase; }
+        .card-box { background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; }
+        .form-row { display: flex; gap: 6px; margin-bottom: 6px; }
+        .input-group { display: flex; flex-direction: column; gap: 3px; flex: 1; }
+        .input-group label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600; }
+        input, textarea, select { background-color: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-main); padding: 6px; border-radius: 4px; font-size: 0.8rem; }
+        button { background-color: var(--accent-red); color: white; border: none; padding: 8px 12px; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 0.85rem; }
         button:hover { background-color: var(--accent-red-hover); }
-        button.btn-sec { background-color: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-main); }
-        button.btn-sec:hover { background-color: var(--border-color); }
+        .btn-sec { background-color: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-main); }
 
-        #log-dados {
-            background: #09090b;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            padding: 10px;
-            flex-grow: 1;
-            overflow-y: auto;
-            font-family: monospace;
-            min-height: 150px;
-        }
+        /* Switch de Rol Master / Jugador */
+        .role-indicator { display: flex; justify-content: space-between; align-items: center; background: #09090b; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); }
+        .btn-role { background-color: var(--dm-purple); }
+
+        /* Dados y Chat */
+        .dice-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 6px; }
+        #log-dados { background: #09090b; border: 1px solid var(--border-color); border-radius: 4px; padding: 8px; flex-grow: 1; overflow-y: auto; font-family: monospace; font-size: 0.8rem; min-height: 120px; }
 
         /* Centro: Mapa Táctico */
-        .map-area {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background-color: #18181b;
-            position: relative;
-        }
-
-        .map-toolbar {
-            position: absolute;
-            top: 15px;
-            z-index: 10;
-            display: flex;
-            gap: 10px;
-            background: rgba(26,26,30,0.85);
-            padding: 8px;
-            border-radius: 6px;
-            border: 1px solid var(--border-color);
-            backdrop-filter: blur(4px);
-        }
-
-        #grid-tablero {
-            width: 640px;
-            height: 640px;
-            background-image: 
-                linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px);
-            background-size: 40px 40px;
-            background-color: #27272a;
-            border: 2px solid var(--dnd-gold);
-            border-radius: 4px;
-            position: relative;
-            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.7);
-        }
-
-        .token {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            background-color: #2563eb;
-            border: 2px solid white;
-            position: absolute;
-            cursor: move;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 10px;
-            user-select: none;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.5);
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
+        .map-area { display: flex; flex-direction: column; align-items: center; justify-content: center; background-color: #18181b; position: relative; overflow: auto; }
+        .map-toolbar { position: absolute; top: 10px; z-index: 10; display: flex; gap: 6px; background: rgba(26,26,30,0.9); padding: 6px; border-radius: 6px; border: 1px solid var(--border-color); }
+        #grid-tablero { width: 600px; height: 600px; background-image: linear-gradient(to right, rgba(255,255,255,0.04) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.04) 1px, transparent 1px); background-size: 40px 40px; background-color: #27272a; border: 2px solid var(--dnd-gold); position: relative; }
+        
+        .token { width: 36px; height: 36px; border-radius: 50%; background-color: #2563eb; border: 2px solid white; position: absolute; cursor: move; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 10px; user-select: none; box-shadow: 0 4px 6px rgba(0,0,0,0.5); }
         .token.enemigo { background-color: #dc2626; }
 
-        /* Formulario Común de Inputs */
-        .form-row { display: flex; gap: 8px; margin-bottom: 8px; }
-        .input-group { display: flex; flex-direction: column; gap: 3px; flex: 1; }
-        .input-group label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600; }
-        input, textarea, select {
-            background-color: var(--bg-input);
-            border: 1px solid var(--border-color);
-            color: var(--text-main);
-            padding: 6px 10px;
-            border-radius: 4px;
-            font-size: 0.85rem;
-        }
-        input:focus, textarea:focus { border-color: var(--accent-red); outline: none; }
-
-        /* --- HOJA DE PERSONAJE ESTILO D&D 2024 --- */
-        .dnd-header { background: #09090b; padding: 10px; border-radius: 6px; margin-bottom: 12px; border: 1px dashed var(--dnd-gold); }
+        /* Ficha de Personaje Estilo Oficial Completo */
+        .dnd-header { background: #09090b; padding: 8px; border-radius: 6px; margin-bottom: 10px; border: 1px dashed var(--dnd-gold); }
+        .stats-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; margin-bottom: 10px; }
+        .stat-box { background: #09090b; border: 1px solid var(--border-color); border-radius: 4px; text-align: center; padding: 4px; }
+        .stat-box span { display: block; font-size: 0.6rem; color: var(--text-muted); font-weight: bold; }
+        .stat-box input { width: 85%; text-align: center; padding: 1px; font-size: 0.85rem; font-weight: bold; border: none; background: transparent; }
         
-        .stats-row {
-            display: grid;
-            grid-template-columns: repeat(6, 1fr);
-            gap: 6px;
-            margin-bottom: 12px;
-        }
-        .stat-box {
-            background: #09090b;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            text-align: center;
-            padding: 4px;
-        }
-        .stat-box span { display: block; font-size: 0.65rem; color: var(--text-muted); font-weight: bold; }
-        .stat-box input { width: 80%; text-align: center; padding: 2px; margin-top: 2px; font-size: 0.9rem; font-weight: bold; border-color: transparent; }
+        .combat-metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-bottom: 10px; }
+        .metric-box { background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 4px; padding: 4px; text-align: center; }
+        .metric-box.hp { border-color: var(--accent-red); }
+        .metric-box label { font-size: 0.6rem; color: var(--text-muted); display: block; font-weight: bold; }
+        .metric-box input { width: 85%; text-align: center; font-weight: bold; font-size: 0.85rem; background: transparent; border: none; }
 
-        .combat-metrics {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 6px;
-            margin-bottom: 12px;
-        }
-        .metric-box {
-            background: var(--bg-main);
-            border: 1px solid var(--dnd-gold);
-            border-radius: 4px;
-            padding: 6px;
-            text-align: center;
-        }
-        .metric-box label { font-size: 0.65rem; color: var(--text-muted); display: block; font-weight: bold; text-transform: uppercase;}
-        .metric-box input { width: 90%; text-align: center; font-weight: bold; font-size: 1rem; margin-top: 2px; }
+        .skills-container { background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 6px; padding: 6px; font-size: 0.75rem; max-height: 120px; overflow-y: auto; }
+        .skill-line { display: flex; align-items: center; gap: 4px; padding: 2px 0; border-bottom: 1px solid #27272a; }
+        .skill-line .mod-val { color: var(--dnd-gold); font-weight: bold; margin-left: auto; width: 25px; text-align: right; border: none; background: transparent; }
 
-        .skills-container {
-            background: var(--bg-main);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            padding: 8px;
-            font-size: 0.8rem;
-            max-height: 180px;
-            overflow-y: auto;
-        }
-        .skill-line { display: flex; align-items: center; gap: 6px; padding: 2px 0; border-bottom: 1px solid #27272a; }
-        .skill-line input[type="checkbox"] { accent-color: var(--accent-red); }
-        .skill-line .mod-val { color: var(--dnd-gold); font-weight: bold; margin-left: auto; width: 30px; text-align: right; border: none; background: transparent;}
-
-        .section-tabs {
-            display: flex;
-            gap: 4px;
-            margin-top: 10px;
-        }
-        .tab-btn { flex: 1; padding: 6px; font-size: 0.75rem; background: var(--bg-main); border: 1px solid var(--border-color); color: var(--text-muted); border-radius: 4px 4px 0 0; }
+        .section-tabs { display: flex; gap: 2px; margin-top: 8px; }
+        .tab-btn { flex: 1; padding: 5px; font-size: 0.7rem; background: var(--bg-main); border: 1px solid var(--border-color); color: var(--text-muted); border-radius: 4px 4px 0 0; }
         .tab-btn.active { background: var(--bg-panel); border-bottom-color: transparent; color: var(--dnd-gold); font-weight: bold; }
-        .tab-content { background: var(--bg-main); border: 1px solid var(--border-color); border-top: none; padding: 10px; min-height: 120px; border-radius: 0 0 4px 4px; }
+        .tab-content { background: var(--bg-main); border: 1px solid var(--border-color); border-top: none; padding: 8px; min-height: 90px; border-radius: 0 0 4px 4px; }
+
+        /* Vistas condicionales de Rol */
+        .dm-only { display: none !important; }
+        body.dm-mode .player-only { display: none !important; }
+        body.dm-mode .dm-only { display: flex !important; }
+        body.dm-mode { grid-template-columns: 320px 1fr 380px; }
+        body.dm-mode h2 { color: var(--dm-purple); border-bottom-color: var(--dm-purple); }
+
+        /* 📱 RESPONSIVO CELULARES */
+        @media (max-width: 900px) {
+            body { grid-template-columns: 1fr; grid-template-rows: 1fr 50px; }
+            .panel { position: fixed; top: 0; left: 0; width: 100vw; height: calc(100vh - 50px); z-index: 100; display: none; }
+            .panel.active { display: flex; }
+            .map-area { width: 100vw; height: calc(100vh - 50px); }
+            
+            /* Barra de navegación inferior móvil */
+            .mobile-nav { display: grid !important; grid-template-columns: repeat(3, 1fr); background: #09090b; border-top: 1px solid var(--border-color); z-index: 200; position: fixed; bottom: 0; width: 100vw; height: 50px; }
+            .mobile-nav button { background: transparent; color: var(--text-muted); border: none; border-radius: 0; font-size: 0.75rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+            .mobile-nav button.active { color: var(--accent-red); font-weight: bold; background: var(--bg-panel); }
+            body.dm-mode .mobile-nav button.active { color: var(--dm-purple); }
+        }
+        .mobile-nav { display: none; }
     </style>
 </head>
 <body>
 
-    <!-- IZQUIERDA: Herramientas de Juego y Conexión -->
-    <div class="panel">
+    <!-- NAV INFERIOR PARA CELULARES -->
+    <div class="mobile-nav">
+        <button class="active" onclick="verPanel('mapa', this)">🗺️ Mapa</button>
+        <button onclick="verPanel('herramientas', this)">🎲 Dados</button>
+        <button onclick="verPanel('ficha', this)" id="btn-tab-ficha">🛡️ Ficha</button>
+    </div>
+
+    <!-- COLUMNA IZQUIERDA: Herramientas y Conexión -->
+    <div class="panel" id="panel-herramientas">
+        <div class="role-indicator">
+            <span id="role-text" style="font-weight: bold; font-size:0.85rem;">Modo: JUGADOR</span>
+            <button onclick="cambiarRol()" class="btn-role" id="btn-toggle-rol">Ser DM 👑</button>
+        </div>
+
         <h2>👤 Identidad</h2>
         <div class="card-box">
             <div class="input-group">
-                <label>Nombre de Usuario (Tú):</label>
-                <input type="text" id="username" value="Jugador1" placeholder="Ej. ElDM_Xavier">
+                <label>Tu Nombre:</label>
+                <input type="text" id="username" value="Aventurero1" onchange="actualizarNombreToken()">
             </div>
         </div>
 
-        <h2>🌐 Conectividad Mesa</h2>
+        <h2>🌐 Sala Online</h2>
         <div class="card-box">
-            <p style="margin: 0 0 8px 0; font-size: 0.85rem;">Tu ID de Sala: <b id="mi-id" style="color: #10b981;">Generando...</b></p>
+            <p style="margin: 0 0 6px 0; font-size: 0.75rem;">ID de Mesa: <b id="mi-id" style="color: #10b981;">Conectando...</b></p>
             <div class="input-group">
-                <input type="text" id="peer-id-destino" placeholder="Pegar ID del DM / Amigo">
-                <button onclick="conectarAlDM()" style="margin-top: 6px; background: #10b981;">Unirse a Partida</button>
+                <input type="text" id="peer-id-destino" placeholder="Pegar ID del Amigo/DM">
+                <button onclick="conectarAlDM()" style="margin-top: 4px; background-color: #10b981;">Unirse a Mesa</button>
             </div>
         </div>
 
-        <h2>🎲 Dados de Destino</h2>
+        <h2>🎲 Dados</h2>
         <div class="card-box">
             <div class="dice-grid">
                 <button onclick="lanzarDado(4)">d4</button>
@@ -271,175 +150,218 @@
                 <button onclick="lanzarDado(12)">d12</button>
                 <button onclick="lanzarDado(20)" style="background: var(--dnd-gold);">d20</button>
             </div>
-            <button onclick="lanzarDado(100)" class="btn-sec" style="width: 100%;">Porcentual (d100)</button>
+            <button onclick="lanzarDado(100)" class="btn-sec" style="width:100%; font-size:0.75rem;">d100</button>
         </div>
-        
-        <h2>📜 Registro de Acciones</h2>
+
+        <h2>📜 Historial</h2>
         <div id="log-dados"></div>
-        <button onclick="document.getElementById('log-dados').innerHTML=''" class="btn-sec" style="font-size:0.8rem; padding: 6px;">Limpiar Chat</button>
     </div>
 
-    <!-- CENTRO: Grid de Combate -->
-    <div class="map-area">
+    <!-- CENTRO: Mapa Táctico -->
+    <div class="map-area" id="panel-mapa">
         <div class="map-toolbar">
-            <button onclick="crearTokenLocal('PJ', 'jugador')" style="padding: 6px 12px; font-size: 0.85rem;">+ Héroe (PJ)</button>
-            <button onclick="crearTokenLocal('E', 'enemigo')" style="padding: 6px 12px; font-size: 0.85rem; background-color: #dc2626;">+ Enemigo (E)</button>
+            <button onclick="crearTokenLocal('PJ', 'jugador')">+ Añadir Mi Héroe</button>
+            <button onclick="crearTokenLocal('E', 'enemigo')" class="dm-only" style="background-color: #dc2626;">+ Invocar Monstruo (DM)</button>
         </div>
         <div id="grid-tablero"></div>
     </div>
 
-    <!-- DERECHA: Ficha Completa del Jugador -->
-    <div class="panel panel-sheet">
-        <h2>🛡️ Registro de Personaje (D&D)</h2>
+    <!-- COLUMNA DERECHA: Ficha de Jugador O Panel de DM -->
+    <div class="panel panel-sheet" id="panel-ficha">
         
-        <!-- Encabezado Ficha[cite: 1] -->
-        <div class="dnd-header">
-            <div class="form-row">
-                <div class="input-group"><label>Nombre Personaje</label><input type="text" id="char-name" value="Garith"></div>
-                <div class="input-group" style="max-width: 80px;"><label>Nivel</label><input type="number" value="1"></div>
+        <!-- VISTA EXCLUSIVA: JUGADOR (FICHA OFICIAL COMPLETA) -->
+        <div class="player-only" style="display: flex; flex-direction: column; gap: 10px; width: 100%;">
+            <h2>🛡️ Ficha de Personaje</h2>
+            <div class="dnd-header">
+                <div class="form-row">
+                    <div class="input-group"><label>Nombre Personaje</label><input type="text" id="char-name" value="Garith"></div>
+                    <div class="input-group" style="max-width: 60px;"><label>Nivel</label><input type="number" value="1"></div>
+                </div>
+                <div class="form-row">
+                    <div class="input-group"><label>Clase y Subclase</label><input type="text" value="Paladín"></div>
+                    <div class="input-group"><label>Especie / Trasfondo</label><input type="text" value="Humano / Soldado"></div>[cite: 1]
+                </div>
             </div>
+
+            <div class="stats-row">
+                <div class="stat-box"><span>FUE</span><input type="number" value="15"></div>
+                <div class="stat-box"><span>DES</span><input type="number" value="10"></div>
+                <div class="stat-box"><span>CON</span><input type="number" value="14"></div>
+                <div class="stat-box"><span>INT</span><input type="number" value="8"></div>
+                <div class="stat-box"><span>SAB</span><input type="number" value="12"></div>
+                <div class="stat-box"><span>CAR</span><input type="number" value="14"></div>
+            </div>
+
+            <div class="combat-metrics">
+                <div class="metric-box"><label>Armadura CA</label><input type="number" value="18"></div>[cite: 1]
+                <div class="metric-box"><label>Iniciativa</label><input type="number" value="0"></div>[cite: 1]
+                <div class="metric-box"><label>Velocidad</label><input type="text" value="30 ft"></div>[cite: 1]
+                <div class="metric-box hp"><label>PG Actuales</label><input type="number" value="12"></div>[cite: 1]
+            </div>
+
+            <!-- Nuevos Campos Agregados para Completar la Ficha Oficial -->
+            <div class="combat-metrics">
+                <div class="metric-box"><label>PG Máximos</label><input type="number" value="12"></div>[cite: 1]
+                <div class="metric-box"><label>Dados Golpe</label><input type="text" value="1d10"></div>[cite: 1]
+                <div class="metric-box"><label>Muerte: Éxitos</label><input type="text" value="◯ ◯ ◯" onclick="this.value=this.value==='◯ ◯ ◯'?'🔴 ◯ ◯':(this.value==='🔴 ◯ ◯'?'🔴 🔴 ◯':'🔴 🔴 🔴')" style="cursor:pointer; font-size:0.7rem;"></div>[cite: 1]
+                <div class="metric-box"><label>Muerte: Fallos</label><input type="text" value="◯ ◯ ◯" onclick="this.value=this.value==='◯ ◯ ◯'?'❌ ◯ ◯':(this.value==='❌ ◯ ◯'?'❌ ❌ ◯':'❌ ❌ ❌')" style="cursor:pointer; font-size:0.7rem;"></div>[cite: 1]
+            </div>
+
             <div class="form-row">
-                <div class="input-group"><label>Clase / Subclase</label><input type="text" value="Guerrero / Campeón"></div>
-                <div class="input-group"><label>Especie</label><input type="text" value="Humano"></div>
+                <div class="input-group" style="max-width:30%;"><label>Competencia</label><input type="text" value="+2" style="text-align:center;"></div>[cite: 1]
+                <div class="input-group"><label>Percepción Pasiva</label><input type="number" value="11" style="text-align:center;"></div>[cite: 1]
+                <div class="input-group" style="max-width:25%;"><label>Inspiración</label><input type="text" value="⬜" style="text-align:center; cursor:pointer;" onclick="this.value=this.value==='⬜'?'🔥':'⬜'"></div>[cite: 1]
+            </div>
+
+            <div class="skills-container">
+                <div class="skill-line"><input type="checkbox" checked> <label>Atletismo (Fue)</label> <input class="mod-val" value="+4"></div>[cite: 1]
+                <div class="skill-line"><input type="checkbox"> <label>Sigilo (Des)</label> <input class="mod-val" value="0"></div>[cite: 1]
+                <div class="skill-line"><input type="checkbox"> <label>Historia (Int)</label> <input class="mod-val" value="-1"></div>[cite: 1]
+                <div class="skill-line"><input type="checkbox" checked> <label>Medicina (Sab)</label> <input class="mod-val" value="+3"></div>[cite: 1]
+                <div class="skill-line"><input type="checkbox" checked> <label>Percepción (Sab)</label> <input class="mod-val" value="+3"></div>[cite: 1]
+                <div class="skill-line"><input type="checkbox"> <label>Persuasión (Car)</label> <input class="mod-val" value="+2"></div>[cite: 1]
+            </div>
+
+            <div class="section-tabs">
+                <button class="tab-btn active" onclick="cambiarTab('tab-atq', this)">Ataques</button>[cite: 1]
+                <button class="tab-btn" onclick="cambiarTab('tab-features', this)">Rasgos / Dotes</button>[cite: 1]
+                <button class="tab-btn" onclick="cambiarTab('tab-otros', this)">Idiomas / Equipo</button>[cite: 1]
+            </div>
+            <div class="tab-content" id="tab-atq">
+                <textarea style="width:95%; height:60px; background:transparent; border:none; resize:none;" placeholder="Espada Larga | +4 Atq | 1d8+2 Cortante"></textarea>[cite: 1]
+            </div>
+            <div class="tab-content" id="tab-features" style="display:none;">
+                <textarea style="width:95%; height:60px; background:transparent; border:none; resize:none;" placeholder="Sentido Divino, Imposición de Manos, Dote: Alerta."></textarea>[cite: 1]
+            </div>
+            <div class="tab-content" id="tab-otros" style="display:none;">
+                <textarea style="width:95%; height:60px; background:transparent; border:none; resize:none;" placeholder="Idiomas: Común, Élfico. Competencia: Armaduras pesadas, Escudos."></textarea>[cite: 1]
             </div>
         </div>
 
-        <h3>Atributos Core</h3>
-        <!-- Bloque de Atributos[cite: 1] -->
-        <div class="stats-row">
-            <div class="stat-box"><span>FUE</span><input type="number" value="16"></div>
-            <div class="stat-box"><span>DES</span><input type="number" value="14"></div>
-            <div class="stat-box"><span>CON</span><input type="number" value="15"></div>
-            <div class="stat-box"><span>INT</span><input type="number" value="10"></div>
-            <div class="stat-box"><span>SAB</span><input type="number" value="12"></div>
-            <div class="stat-box"><span>CAR</span><input type="number" value="8"></div>
+        <!-- VISTA EXCLUSIVA: DUNGEON MASTER (HERRAMIENTAS DE CAMPAÑA) -->
+        <div class="dm-only" style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
+            <h2>👑 Panel del Dungeon Master</h2>
+            
+            <div class="card-box" style="border-color: var(--dm-purple);">
+                <h3>Generador Rápido de Monstruos</h3>
+                <div class="form-row">
+                    <div class="input-group">
+                        <label>Nombre / Iniciales:</label>
+                        <input type="text" id="dm-enemy-name" value="Goblin">
+                    </div>
+                    <button onclick="invocarMonstruoDM()" style="background-color: var(--dm-purple); margin-top:15px;">Invocar</button>
+                </div>
+            </div>
+
+            <h3>Seguimiento de Iniciativa Global</h3>
+            <textarea style="height: 100px; font-family: monospace; font-size: 0.8rem;" placeholder="1. Garith - 18&#10;2. Goblin A - 14&#10;3. Mago - 9"></textarea>
+
+            <h3>Notas Secretas del DM</h3>
+            <textarea style="height: 160px; resize: none;" placeholder="Escribe aquí los secretos de la mazmorra, trampas, stats de monstruos y giros de guión que tus jugadores no deben ver..."></textarea>
         </div>
 
-        <!-- Métricas Combate Críticas[cite: 1] -->
-        <div class="combat-metrics">
-            <div class="metric-box"><label>Armadura (CA)</label><input type="number" value="16"></div>
-            <div class="metric-box"><label>Iniciativa</label><input type="number" value="2"></div>
-            <div class="metric-box"><label>Velocidad</label><input type="text" value="30 ft"></div>
-            <div class="metric-box" style="border-color: var(--accent-red);"><label>Vida (PG)</label><input type="number" value="12"></div>
-        </div>
-
-        <h3>Competencias y Habilidades[cite: 1]</h3>
-        <div class="form-row">
-            <div class="input-group"><label>Bono Competencia</label><input type="text" value="+2" style="text-align:center; font-weight:bold;"></div>
-            <div class="input-group"><label>Percepción Pasiva</label><input type="number" value="11" style="text-align:center;"></div>
-            <div class="input-group"><label>Inspiración</label><input type="text" value="⬜" style="text-align:center; cursor:pointer;" onclick="this.value = this.value === '⬜' ? '🔥' : '⬜'"></div>
-        </div>
-
-        <div class="skills-container">
-            <div class="skill-line"><input type="checkbox" checked> <label>Atletismo (Fue)</label> <input class="mod-val" value="+5"></div>
-            <div class="skill-line"><input type="checkbox"> <label>Acrobacias (Des)</label> <input class="mod-val" value="+2"></div>
-            <div class="skill-line"><input type="checkbox"> <label>Sigilo (Des)</label> <input class="mod-val" value="+2"></div>
-            <div class="skill-line"><input type="checkbox" checked> <label>Historia (Int)</label> <input class="mod-val" value="+2"></div>
-            <div class="skill-line"><input type="checkbox"> <label>Perspicacia (Sab)</label> <input class="mod-val" value="+1"></div>
-            <div class="skill-line"><input type="checkbox" checked> <label>Percepción (Sab)</label> <input class="mod-val" value="+3"></div>
-            <div class="skill-line"><input type="checkbox"> <label>Intimidación (Car)</label> <input class="mod-val" value="-1"></div>
-            <div class="skill-line"><input type="checkbox"> <label>Persuasión (Car)</label> <input class="mod-val" value="-1"></div>
-        </div>
-
-        <!-- Pestañas Interactivas para Notas, Ataques o Conjuros -->
-        <div class="section-tabs">
-            <button class="tab-btn active" onclick="cambiarTab('tab-ataques', this)">Ataques</button>
-            <button class="tab-btn" onclick="cambiarTab('tab-equipo', this)">Equipo / Oro</button>
-            <button class="tab-btn" onclick="cambiarTab('tab-conjuros', this)">Conjuros</button>
-        </div>
-        <div class="tab-content" id="tab-ataques">
-            <textarea style="width:94%; height:90px; background:transparent; border:none; resize:none;" placeholder="Nombre | Bonif. | Daño y Notas&#10;Espada Larga | +5 | 1d8+3 Cortante&#10;Arco Corto | +4 | 1d6+2 Perforante"></textarea>
-        </div>
-        <div class="tab-content" id="tab-equipo" style="display:none;">
-            <textarea style="width:94%; height:90px; background:transparent; border:none; resize:none;" placeholder="Monedas: PO: 15, PP: 10&#10;Mochila, Cuerda de cáñamo, Antorchas (5), Raciones de viaje."></textarea>
-        </div>
-        <div class="tab-content" id="tab-conjuros" style="display:none;">
-            <textarea style="width:94%; height:90px; background:transparent; border:none; resize:none;" placeholder="Espacios Nivel 1: [ ][ ]&#10;Trucos: Luz, Agarre Electrizante&#10;Preparados: Proyectil Mágico"></textarea>
-        </div>
     </div>
 
     <script>
-        // --- MULTIJUGADOR NET (PEERJS) ---
+        // --- SISTEMA DE CAMBIO DE ROL ---
+        let esDM = false;
+        function cambiarRol() {
+            esDM = !esDM;
+            const body = document.body;
+            const btn = document.getElementById('btn-toggle-rol');
+            const txt = document.getElementById('role-text');
+            const btnFichaTab = document.getElementById('btn-tab-ficha');
+
+            if (esDM) {
+                body.classList.add('dm-mode');
+                btn.innerText = "Ser Jugador 🛡️";
+                btn.style.backgroundColor = "var(--accent-red)";
+                txt.innerText = "Modo: DUNGEON MASTER";
+                btnFichaTab.innerText = "👑 Panel DM";
+            } else {
+                body.classList.remove('dm-mode');
+                btn.innerText = "Ser DM 👑";
+                btn.style.backgroundColor = "var(--dm-purple)";
+                txt.innerText = "Modo: JUGADOR";
+                btnFichaTab.innerText = "🛡️ Ficha";
+            }
+        }
+
+        function invocarMonstruoDM() {
+            const nombre = document.getElementById('dm-enemy-name').value.trim() || "E";
+            crearTokenLocal(nombre.substring(0,4), 'enemigo');
+        }
+
+        // --- RESPONSIVO MÓVIL (PANELES) ---
+        function verPanel(idPanel, btn) {
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.mobile-nav button').forEach(b => b.classList.remove('active'));
+            
+            if (idPanel !== 'mapa') {
+                document.getElementById('panel-' + idPanel).classList.add('active');
+            }
+            btn.classList.add('active');
+        }
+
+        // --- RED MULTIJUGADOR P2P (PEERJS) ---
         let peer = new Peer(); 
         let conexiones = [];
-        let miId = "";
 
-        peer.on('open', (id) => {
-            miId = id;
-            document.getElementById('mi-id').innerText = id;
-        });
-
+        peer.on('open', (id) => { document.getElementById('mi-id').innerText = id; });
         peer.on('connection', (conn) => { configurarConexion(conn); });
 
         function conectarAlDM() {
             const idDestino = document.getElementById('peer-id-destino').value.trim();
-            const miNombre = document.getElementById('username').value.trim() || "Anónimo";
-            if (idDestino) {
-                const conn = peer.connect(idDestino);
-                configurarConexion(conn);
-            }
+            if (idDestino) { configurarConexion(peer.connect(idDestino)); }
         }
 
         function configurarConexion(conn) {
             conexiones.push(conn);
             conn.on('open', () => {
-                const miNombre = document.getElementById('username').value.trim() || "Anónimo";
-                enviarDatos({ tipo: 'sistema', msg: `🛡️ ¡${miNombre} se ha unido a la mesa!` });
+                const miNombre = document.getElementById('username').value.trim() || "Alguien";
+                enviarDatos({ tipo: 'sistema', msg: `⚔️ ${miNombre} se ha conectado.` });
             });
             conn.on('data', (data) => { procesarDatosRed(data); });
         }
 
-        function enviarDatos(data) {
-            conexiones.forEach(conn => { if (conn.open) conn.send(data); });
-        }
+        function enviarDatos(data) { conexiones.forEach(conn => { if (conn.open) conn.send(data); }); }
 
         function procesarDatosRed(data) {
-            if (data.tipo === 'dado') {
-                mostrarLogDado(data.usuario, data.caras, data.resultado);
-            } else if (data.tipo === 'sistema') {
-                document.getElementById('log-dados').innerHTML += `<div style="color: #eab308; margin-bottom:4px;">${data.msg}</div>`;
-            } else if (data.tipo === 'mover-token') {
+            if (data.tipo === 'dado') { mostrarLogDado(data.usuario, data.caras, data.resultado); }
+            else if (data.tipo === 'sistema') { document.getElementById('log-dados').innerHTML += `<div style="color:var(--dnd-gold); margin-bottom:4px;">${data.msg}</div>`; }
+            else if (data.tipo === 'mover-token') {
                 const token = document.getElementById(data.id);
-                if (token) {
-                    token.style.left = data.x + "px";
-                    token.style.top = data.y + "px";
-                }
-            } else if (data.tipo === 'crear-token') {
-                crearTokenVisual(data.id, data.texto, data.clase, data.x, data.y);
-            }
+                if (token) { token.style.left = data.x + "px"; token.style.top = data.y + "px"; }
+            } else if (data.tipo === 'crear-token') { crearTokenVisual(data.id, data.texto, data.clase, data.x, data.y); }
         }
 
         // --- DADOS ---
         function lanzarDado(caras) {
             const resultado = Math.floor(Math.random() * caras) + 1;
             const miNombre = document.getElementById('username').value.trim() || "Anónimo";
-            
             mostrarLogDado(miNombre, caras, resultado);
             enviarDatos({ tipo: 'dado', usuario: miNombre, caras: caras, resultado: resultado });
         }
 
         function mostrarLogDado(usuario, caras, resultado) {
             const log = document.getElementById('log-dados');
-            let estilo = "margin-bottom: 4px; color: var(--text-main);";
-            if (caras === 20 && resultado === 20) estilo += "color: #10b981; font-weight:bold; text-shadow: 0 0 4px rgba(16,185,129,0.4);";
+            let estilo = "margin-bottom: 4px;";
+            if (caras === 20 && resultado === 20) estilo += "color: #10b981; font-weight:bold;";
             if (caras === 20 && resultado === 1) estilo += "color: #ef4444; font-weight:bold;";
-            
-            log.innerHTML += `<div style="${estilo}">🎲 <b>${usuario}</b> (d${caras}): <span style="font-size:1.05rem;">${resultado}</span></div>`;
+            log.innerHTML += `<div style="${estilo}">🎲 <b>${usuario}</b> (d${caras}): ${resultado}</div>`;
             log.scrollTop = log.scrollHeight;
         }
 
-        // --- GRID Y TOKENS ---
+        // --- TABLERO Y TOKENS (CON SOPORTE TOUCH MÓVIL) ---
         const tablero = document.getElementById('grid-tablero');
 
         function crearTokenLocal(texto, tipo) {
             const tokenId = 'token-' + Date.now();
             const clase = tipo === 'enemigo' ? 'token enemigo' : 'token';
-            
-            // Si es un PJ, usamos las primeras 4 letras del Nombre de Usuario
             let etiqueta = texto;
-            if (tipo === 'jugador') {
-                const miNombre = document.getElementById('username').value.trim() || "PJ";
-                etiqueta = miNombre.substring(0, 4);
+            
+            if (tipo === 'jugador' && !esDM) {
+                etiqueta = (document.getElementById('username').value || "PJ").substring(0,4);
             }
 
             crearTokenVisual(tokenId, etiqueta, clase, 2, 2);
@@ -449,51 +371,40 @@
         function crearTokenVisual(id, texto, clase, x, y) {
             if(document.getElementById(id)) return;
             const token = document.createElement('div');
-            token.id = id;
-            token.className = clase;
-            token.innerText = texto;
-            token.title = texto; // Tooltip al pasar el mouse por encima
-            token.style.left = x + "px";
-            token.style.top = y + "px";
+            token.id = id; token.className = clase; token.innerText = texto;
+            token.style.left = x + "px"; token.style.top = y + "px";
             hacerArrastrable(token);
             tablero.appendChild(token);
         }
 
         function hacerArrastrable(elemento) {
             let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+            
+            // Mouse para PC
             elemento.onmousedown = arrastrarMouseDown;
+            // Touch para Móviles
+            elemento.ontouchstart = arrastrarTouchStart;
 
-            function arrastrarMouseDown(e) {
-                e.preventDefault();
-                pos3 = e.clientX;
-                pos4 = e.clientY;
-                document.onmouseup = cerrarArrastrarElemento;
-                document.onmousemove = elementoArrastrar;
-            }
+            function arrastrarMouseDown(e) { e.preventDefault(); pos3 = e.clientX; pos4 = e.clientY; document.onmouseup = cerrarArrastrarElemento; document.onmousemove = elementoArrastrar; }
+            function arrastrarTouchStart(e) { pos3 = e.touches[0].clientX; pos4 = e.touches[0].clientY; document.ontouchend = cerrarArrastrarElemento; document.ontouchmove = elementoTouchArrastrar; }
 
-            function elementoArrastrar(e) {
-                e.preventDefault();
-                pos1 = pos3 - e.clientX;
-                pos2 = pos4 - e.clientY;
-                pos3 = e.clientX;
-                pos4 = e.clientY;
-                
+            function elementoArrastrar(e) { calcularPosicion(e.clientX, e.clientY); }
+            function elementoTouchArrastrar(e) { calcularPosicion(e.touches[0].clientX, e.touches[0].clientY); }
+
+            function calcularPosicion(clientX, clientY) {
+                pos1 = pos3 - clientX; pos2 = pos4 - clientY;
+                pos3 = clientX; pos4 = clientY;
                 let nuevoTop = Math.round((elemento.offsetTop - pos2) / 40) * 40 + 2;
                 let nuevoLeft = Math.round((elemento.offsetLeft - pos1) / 40) * 40 + 2;
 
-                if (nuevoTop >= 0 && nuevoTop <= 600) elemento.style.top = nuevoTop + "px";
-                if (nuevoLeft >= 0 && nuevoLeft <= 600) elemento.style.left = nuevoLeft + "px";
-
+                if (nuevoTop >= 0 && nuevoTop <= 560) elemento.style.top = nuevoTop + "px";
+                if (nuevoLeft >= 0 && nuevoLeft <= 560) elemento.style.left = nuevoLeft + "px";
                 enviarDatos({ tipo: 'mover-token', id: elemento.id, x: nuevoLeft, y: nuevoTop });
             }
 
-            function cerrarArrastrarElemento() {
-                document.onmouseup = null;
-                document.onmousemove = null;
-            }
+            function cerrarArrastrarElemento() { document.onmouseup = null; document.onmousemove = null; document.ontouchend = null; document.ontouchmove = null; }
         }
 
-        // --- CONTROL DE PESTAÑAS ---
         function cambiarTab(tabId, btn) {
             document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
