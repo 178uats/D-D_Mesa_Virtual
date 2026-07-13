@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>D&D Mesa Táctica Pro - Épica</title>
+    <title>D&D Mesa Táctica Épica - Adaptación Total</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root {
@@ -37,9 +37,6 @@
             overflow: hidden;
             transition: background 0.3s, color 0.3s;
         }
-        /* Componentes de Interfaz */
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
         .panel { background-color: var(--bg-panel); border-right: 1px solid var(--border-color); padding: 15px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px; overflow-y: auto; }
         .panel-sheet { border-right: none; border-left: 1px solid var(--border-color); }
         h2 { font-size: 1rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--accent-red); margin: 0 0 5px 0; border-bottom: 2px solid var(--accent-red); padding-bottom: 4px; }
@@ -55,48 +52,45 @@
         .btn-role { background-color: var(--dm-purple); }
         #log-dados { background: rgba(0,0,0,0.15); border: 1px solid var(--border-color); border-radius: 4px; padding: 8px; flex-grow: 1; overflow-y: auto; font-family: monospace; font-size: 0.8rem; min-height: 100px; }
         
-        /* Centro y Tablero Texturizado */
+        /* Área del Mapa */
         .map-area { display: flex; flex-direction: column; background-color: #18181b; position: relative; overflow: hidden; }
-        .movable-action-bar { position: absolute; top: 20px; left: 20px; z-index: 90; display: flex; flex-wrap: wrap; gap: 6px; background: rgba(26,26,30,0.95); padding: 8px; border-radius: 8px; border: 1px solid var(--border-color); cursor: move; box-shadow: 0 4px 12px rgba(0,0,0,0.6); user-select: none; touch-action: none; }
+        .movable-action-bar { position: absolute; top: 20px; left: 20px; z-index: 95; display: flex; flex-wrap: wrap; gap: 6px; background: rgba(26,26,30,0.95); padding: 8px; border-radius: 8px; border: 1px solid var(--border-color); box-shadow: 0 4px 12px rgba(0,0,0,0.6); }
         .map-viewport { flex: 1; overflow: auto; padding: 20px; position: relative; }
         
         #grid-tablero { 
             width: 800px; height: 800px; 
             position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.8);
             border: 3px solid var(--dnd-gold);
-            transition: background 0.3s;
         }
-        /* Texturas Ajustables por CSS */
-        .tex-dark {
-            background-image: linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px); 
-            background-size: 40px 40px; background-color: #27272a;
-        }
-        .tex-pergamino {
-            background: radial-gradient(circle, #f2e3c6 60%, #d8be91 100%);
-            background-image: linear-gradient(to right, rgba(0,0,0,0.1) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,0.1) 1px, transparent 1px);
-            background-size: 40px 40px;
-        }
-        .tex-madera {
-            background: repeating-linear-gradient(45deg, #5c4033, #5c4033 10px, #4a3329 10px, #4a3329 20px);
-            background-image: linear-gradient(to right, rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.1) 1px, transparent 1px);
-            background-size: 40px 40px;
-        }
+        .tex-dark { background-image: linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px); background-size: 40px 40px; background-color: #27272a; }
+        .tex-pergamino { background: radial-gradient(circle, #f2e3c6 60%, #d8be91 100%); background-image: linear-gradient(to right, rgba(0,0,0,0.1) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,0.1) 1px, transparent 1px); background-size: 40px 40px; }
+        .tex-madera { background: repeating-linear-gradient(45deg, #5c4033, #5c4033 10px, #4a3329 10px, #4a3329 20px); background-image: linear-gradient(to right, rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.1) 1px, transparent 1px); background-size: 40px 40px; }
 
-        #canvas-dibujo { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
+        #canvas-dibujo { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; }
         body.dm-mode #canvas-dibujo { pointer-events: auto; }
         
-        /* Capas de Niebla y Celdas de Zona */
-        .fog-block { position: absolute; width: 40px; height: 40px; background: #000000; z-index: 8; opacity: 0.95; cursor: pointer; border: 1px dashed #222; }
-        body:not(.dm-mode) .fog-block { border: none; cursor: default; }
+        /* Niebla y Zonas */
+        .fog-block { position: absolute; width: 40px; height: 40px; background: #000000; z-index: 8; opacity: 0.95; border: 1px dashed #222; }
+        body:not(.dm-mode) .fog-block { border: none; }
         .zone-block { position: absolute; width: 40px; height: 40px; z-index: 2; box-sizing: border-box; pointer-events: none; }
         .zone-block.diff { border: 2px dashed #eab308; background: rgba(234,179,8,0.15); }
         .zone-block.curse { border: 2px dashed #a855f7; background: rgba(168,85,247,0.15); }
         .zone-block.trap { border: 2px dashed #f97316; background: rgba(249,115,22,0.15); }
 
-        /* Tokens y Menú de Estados */
-        .token { width: 36px; height: 36px; border-radius: 50%; background-color: #2563eb; border: 2px solid white; position: absolute; cursor: move; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 10px; user-select: none; z-index: 10; box-shadow: 0 4px 6px rgba(0,0,0,0.5); touch-action: none; color: white; }
+        /* Tokens Fluidos */
+        .token { 
+            width: 36px; height: 36px; border-radius: 50%; 
+            background-color: #2563eb; border: 2px solid white; 
+            position: absolute; cursor: move; display: flex; 
+            align-items: center; justify-content: center; 
+            font-weight: bold; font-size: 10px; user-select: none; 
+            z-index: 50; box-shadow: 0 4px 6px rgba(0,0,0,0.5); 
+            touch-action: none; color: white;
+            transition: transform 0.05s linear;
+        }
         .token.enemigo { background-color: #dc2626; }
-        .token-status-indicator { position: absolute; bottom: -8px; right: -8px; font-size: 12px; background: black; border-radius: 4px; padding: 1px 3px; display: flex; gap: 1px; z-index: 11; }
+        .token:active { transform: scale(1.15); z-index: 100; box-shadow: 0 8px 16px rgba(0,0,0,0.6); }
+        .token-status-indicator { position: absolute; bottom: -8px; right: -8px; font-size: 12px; background: black; border-radius: 4px; padding: 1px 3px; display: flex; gap: 1px; z-index: 51; pointer-events: none; }
 
         /* Animaciones */
         @keyframes dicePop {
@@ -105,12 +99,8 @@
             100% { transform: scale(1) rotate(360deg); opacity: 1; }
         }
         .dice-animation { position: absolute; font-size: 3rem; font-weight: bold; color: var(--dnd-gold); text-shadow: 0 0 15px black; z-index: 999; pointer-events: none; animation: dicePop 0.6s ease-out forwards; }
-        
         .action-fx { animation: flashEffect 0.5s ease-out; }
-        @keyframes flashEffect {
-            0% { background: rgba(225,29,72,0.4); }
-            100% { background: transparent; }
-        }
+        @keyframes flashEffect { 0% { background: rgba(225,29,72,0.4); } 100% { background: transparent; } }
 
         /* Ficha de Personaje */
         .dnd-header { background: rgba(0,0,0,0.1); padding: 8px; border-radius: 6px; margin-bottom: 8px; border: 1px dashed var(--dnd-gold); }
@@ -130,15 +120,11 @@
         .btn-fx-def { background: #1d4ed8; }
         .btn-fx-cur { background: #047857; }
 
-        .skills-container { background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 6px; padding: 6px; font-size: 0.75rem; max-height: 80px; overflow-y: auto; }
-        .skill-line { display: flex; align-items: center; gap: 4px; padding: 2px 0; border-bottom: 1px solid var(--border-color); }
-        .skill-line .mod-val { color: var(--dnd-gold); font-weight: bold; margin-left: auto; width: 25px; text-align: right; border: none; background: transparent; }
         .section-tabs { display: flex; gap: 2px; margin-top: 8px; }
         .tab-btn { flex: 1; padding: 5px; font-size: 0.7rem; background: var(--bg-main); border: 1px solid var(--border-color); color: var(--text-muted); border-radius: 4px 4px 0 0; cursor: pointer; }
         .tab-btn.active { background: var(--bg-panel); border-bottom-color: transparent; color: var(--dnd-gold); font-weight: bold; }
         .tab-content { background: var(--bg-main); border: 1px solid var(--border-color); border-top: none; padding: 8px; min-height: 50px; border-radius: 0 0 4px 4px; }
         
-        /* Visibilidades Dinámicas */
         .dm-only { display: none !important; }
         body.dm-mode .player-only { display: none !important; }
         body.dm-mode .dm-only { display: flex !important; }
@@ -164,7 +150,7 @@
         <button onclick="verPanel('ficha', this)" id="btn-tab-ficha">🛡️ Ficha</button>
     </div>
 
-    <!-- COLUMNA IZQUIERDA -->
+    <!-- PANEL IZQUIERDO -->
     <div class="panel" id="panel-herramientas">
         <div class="role-indicator">
             <span id="role-text" style="font-weight: bold; font-size:0.85rem;">Modo: JUGADOR</span>
@@ -178,16 +164,16 @@
         <div class="card-box">
             <div class="input-group">
                 <label>Tu Nombre:</label>
-                <input type="text" id="username" value="Héroe1">
+                <input type="text" id="username" value="Asura">
             </div>
         </div>
 
-        <h2>🌐 Salas Simples</h2>
+        <h2>🌐 Salas Conexión</h2>
         <div class="card-box" style="display: flex; flex-direction: column; gap: 6px; font-size: 0.8rem;">
             <div class="input-group">
                 <label>Nombre de la Sala:</label>
                 <div style="display: flex; gap: 4px;">
-                    <input type="text" id="custom-room-id" placeholder="ej. mi-partida-9" style="flex: 1;">
+                    <input type="text" id="custom-room-id" placeholder="ej. mesa-combate" style="flex: 1;">
                     <button onclick="crearSalaPersonalizada()" style="background-color: var(--dnd-gold); font-size:0.75rem;">Crear</button>
                 </div>
             </div>
@@ -198,7 +184,7 @@
             </div>
         </div>
 
-        <h2>🎲 Dados Especiales</h2>
+        <h2>🎲 Dados</h2>
         <div class="card-box">
             <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 4px;">
                 <button onclick="lanzarDado(4)">d4</button>
@@ -214,130 +200,122 @@
 
     <!-- CENTRO: MAPA INTERACTIVO -->
     <div class="map-area" id="panel-mapa">
-        <div class="movable-action-bar" id="barra-acciones">
-            <span style="font-size:0.75rem; align-self:center; cursor:move;">⁞⁞</span>
+        <!-- BARRA FLUIDA ARRASTRABLE -->
+        <div class="movable-action-bar" id="barra-acciones" style="cursor: move; user-select: none; touch-action: none;">
+            <span style="font-size:0.75rem; align-self:center;">⁞⁞</span>
             <button onclick="crearTokenLocal('PJ', 'jugador')">⚔️ Mi Token</button>
             <button onclick="crearTokenLocal('E', 'enemigo')" class="dm-only" style="background-color: #dc2626;">😈 Monstruo</button>
             
-            <!-- Selector de Texturas -->
             <select id="select-textura" onchange="cambiarTexturaTablero()" style="font-size:0.75rem; padding:2px;">
                 <option value="tex-dark">🌌 Rejilla Oscura</option>
                 <option value="tex-pergamino">📜 Pergamino Rol</option>
                 <option value="tex-madera">🪵 Madera Táctica</option>
             </select>
 
-            <!-- Herramientas DM de Mapas y Nieblas -->
+            <!-- Herramientas DM Avanzadas -->
             <div class="dm-only" style="display:flex; align-items:center; gap:4px; border-left:1px solid var(--border-color); padding-left:6px;">
                 <select id="tipo-pincel-dm" style="padding:2px; font-size:0.75rem;">
-                    <option value="muro_red">🟥 Dibujo Muro</option>
-                    <option value="fog_add">🌫️ Ocultar Zona</option>
+                    <option value="muro_libre">✏️ Dibujo Libre (Muro)</option>
+                    <option value="borrador_libre">🧽 Borrador de Muro</option>
+                    <option value="fog_add">🌫️ Ocultar Zona (Niebla)</option>
                     <option value="fog_rem">👁️ Revelar Zona</option>
-                    <option value="zone_diff">🟡 Zona Terreno Difícil</option>
-                    <option value="zone_curse">🟣 Zona Maldita</option>
-                    <option value="zone_trap">🟠 Zona de Trampa</option>
+                    <option value="zone_diff">🟡 Terreno Difícil</option>
+                    <option value="zone_curse">🟣 Área Maldita</option>
+                    <option value="zone_trap">🟠 Trampa Oculta</option>
                 </select>
-                <button onclick="limpiarDibujoLocal()" style="background:#3f3f46; padding:4px; font-size:0.7rem;">🗑️</button>
+                <button onclick="limpiarDibujoLocal()" style="background:#3f3f46; padding:4px; font-size:0.7rem;">🗑️ Todo</button>
             </div>
         </div>
         
         <div class="map-viewport" id="contenedor-vista-mapa">
             <div id="grid-tablero" class="tex-dark">
-                <!-- Capas internas mediante JS -->
                 <canvas id="canvas-dibujo" width="800" height="800"></canvas>
             </div>
         </div>
     </div>
 
-    <!-- COLUMNA DERECHA (COMPENDIO + FICHA + ACCIONES FX) -->
+    <!-- PANEL DERECHO: COMPENDIO + FICHA -->
     <div class="panel panel-sheet" id="panel-ficha">
         <h2>📚 Biblioteca d&d 5e</h2>
         <div class="card-box" style="padding:6px;">
             <div class="input-group player-only">
                 <select id="select-lib-heroes" onchange="cargarHeroeCompendio()" style="width:100%;">
-                    <option value="">-- Héroes Prehechos Quick --</option>
+                    <option value="">-- Elige tu Héroe --</option>
+                    <option value="monje_god">Asura (Ex Dios de la Adaptación - Monje Guerrero)</option>
                     <option value="guerrero">Garith (Guerrero Enano)</option>
                     <option value="mago">Elysia (Maga Elfa)</option>
-                    <option value="picaro">Zev (Pícaro Mediano)</option>
-                    <option value="paladin">Valen (Paladín Humano)</option>
                 </select>
             </div>
             <div class="input-group dm-only">
                 <select id="select-lib-monstruos" onchange="cargarMonstruoCompendio()" style="width:100%;">
-                    <option value="">-- Bestiario Rápido --</option>
+                    <option value="">-- Bestiario DM --</option>
                     <option value="goblin">Goblin (CR 1/4)</option>
                     <option value="orco">Orco Berserker (CR 1)</option>
-                    <option value="ogro">Ogre Bruto (CR 2)</option>
-                    <option value="dragon">Dragón Rojo Joven (CR 10)</option>
                 </select>
             </div>
         </div>
 
-        <!-- FICHA ESTRUCTURAL -->
+        <!-- FICHA INTERACTIVA -->
         <div class="player-only" style="display: flex; flex-direction: column; gap: 6px; width: 100%;" id="caja-ficha-pj">
             <h2>🛡️ Ficha Interactiva</h2>
             <div class="dnd-header">
                 <div class="form-row">
-                    <div class="input-group"><input type="text" id="pc-name" value="Garith"></div>
-                    <div class="input-group" style="max-width:40px;"><input type="number" id="pc-level" value="1"></div>
+                    <div class="input-group"><input type="text" id="pc-name" value="Asura"></div>
+                    <div class="input-group" style="max-width:40px;"><input type="number" id="pc-level" value="20"></div>
                 </div>
                 <div class="form-row">
-                    <div class="input-group"><input type="text" id="pc-clase" value="Paladín"></div>
-                    <div class="input-group"><input type="text" id="pc-raza" value="Humano"></div>
+                    <div class="input-group"><input type="text" id="pc-clase" value="Monje Guerrero (Tanque/Movilidad)"></div>
+                    <div class="input-group"><input type="text" id="pc-raza" value="Ex Dios de la Adaptación"></div>
                 </div>
             </div>
             
             <div class="stats-row">
-                <div class="stat-box"><span>FUE</span><input type="number" id="s-fue" value="15"></div>
-                <div class="stat-box"><span>DES</span><input type="number" id="s-des" value="10"></div>
-                <div class="stat-box"><span>CON</span><input type="number" id="s-con" value="14"></div>
-                <div class="stat-box"><span>INT</span><input type="number" id="s-int" value="8"></div>
-                <div class="stat-box"><span>SAB</span><input type="number" id="s-sab" value="12"></div>
-                <div class="stat-box"><span>CAR</span><input type="number" id="s-car" value="14"></div>
+                <div class="stat-box"><span>FUE</span><input type="number" id="s-fue" value="16"></div>
+                <div class="stat-box"><span>DES</span><input type="number" id="s-des" value="20"></div>
+                <div class="stat-box"><span>CON</span><input type="number" id="s-con" value="18"></div>
+                <div class="stat-box"><span>INT</span><input type="number" id="s-int" value="12"></div>
+                <div class="stat-box"><span>SAB</span><input type="number" id="s-sab" value="20"></div>
+                <div class="stat-box"><span>CAR</span><input type="number" id="s-car" value="10"></div>
             </div>
             
             <div class="combat-metrics">
-                <div class="metric-box"><label>CA</label><input type="number" id="pc-ca" value="18"></div>
-                <div class="metric-box"><label>Iniciativa</label><input type="number" id="pc-ini" value="0"></div>
-                <div class="metric-box hp"><label>PG Act</label><input type="number" id="pc-hp" value="12"></div>
-                <div class="metric-box"><label>PG Max</label><input type="number" id="pc-hpmax" value="12"></div>
+                <div class="metric-box" style="border-color:var(--dnd-gold);"><label>CA</label><input type="number" id="pc-ca" value="22"></div>
+                <div class="metric-box"><label>Velocidad</label><input type="text" id="pc-ini" value="60 ft"></div>
+                <div class="metric-box hp"><label>PG Act</label><input type="number" id="pc-hp" value="164"></div>
+                <div class="metric-box"><label>PG Max</label><input type="number" id="pc-hpmax" value="164"></div>
             </div>
 
-            <!-- BOTONES DE ACCIONES CON ANIMACIONES Y FX -->
-            <h3>⚔️ Acciones Críticas con FX</h3>
+            <h3>⚔️ Acciones con FX</h3>
             <div class="action-grid">
-                <button class="btn-fx-atq" onclick="dispararAccionFX('ATACAR ⚔️', '#b91c1c')">Lanzar Ataque</button>
-                <button class="btn-fx-mag" onclick="dispararAccionFX('CONJURO 🔮', '#6d28d9')">Lanzar Conjuro</button>
-                <button class="btn-fx-def" onclick="dispararAccionFX('DEFENDERSE 🛡️', '#1d4ed8')">Defenderse</button>
-                <button class="btn-fx-cur" onclick="dispararAccionFX('CURARSE ❤️', '#047857')">Sanar Heridas</button>
+                <button class="btn-fx-atq" onclick="dispararAccionFX('Ráfaga de Golpes Cuerpo a Cuerpo ⚔️', '#b91c1c')">Ataque Melee</button>
+                <button class="btn-fx-mag" onclick="dispararAccionFX('Onda del Vacío Adaptativa (Distancia) 🔮', '#6d28d9')">Ataque Rango</button>
+                <button class="btn-fx-def" onclick="dispararAccionFX('Defensa Espejo Divina (Tanque) 🛡️', '#1d4ed8')">Tanquear / Absorber</button>
+                <button class="btn-fx-cur" onclick="dispararAccionFX('Reorganización Celular ❤️', '#047857')">Adaptar / Curar</button>
             </div>
 
             <div class="section-tabs">
-                <button class="tab-btn active" onclick="cambiarTab('tab-atq', this)">Acción Libre</button>
-                <button class="tab-btn" onclick="cambiarTab('tab-features', this)">Habilidades / Notas</button>
+                <button class="tab-btn active" onclick="cambiarTab('tab-atq', this)">Ataques Estilo</button>
+                <button class="tab-btn" onclick="cambiarTab('tab-features', this)">Habilidades de Dios</button>
             </div>
             <div class="tab-content" id="tab-atq">
-                <textarea id="pc-atq" style="width:96%; height:40px; background:transparent; border:none; resize:none; color:inherit;" placeholder="Espada +4 | 1d8+2"></textarea>
+                <textarea id="pc-atq" style="width:96%; height:60px; background:transparent; border:none; resize:none; color:inherit; font-size:0.75rem;">• Puños Divinos (Melee): +11 al ataque | 1d10+5 fuerza.
+• Proyección de Ki (Distancia - 120ft): +11 al ataque | 1d10+5 Fuerza Espectral.</textarea>
             </div>
             <div class="tab-content" id="tab-features" style="display:none;">
-                <textarea id="pc-feats" style="width:96%; height:40px; background:transparent; border:none; resize:none; color:inherit;" placeholder="Rasgos especiales..."></textarea>
+                <textarea id="pc-feats" style="width:96%; height:60px; background:transparent; border:none; resize:none; color:inherit; font-size:0.75rem;">• Adaptación Infinita: Inmunidad al último tipo de daño recibido.
+• Paso del Dios: Puede teletransportarse o moverse sin provocar ataques de oportunidad.</textarea>
             </div>
         </div>
 
-        <!-- PANEL DM -->
+        <!-- CONTROLES DM -->
         <div class="dm-only" style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
-            <h2>👑 Controles de Dungeon Master</h2>
+            <h2>👑 Controles del DM</h2>
             <div class="card-box" style="border-color: var(--dm-purple);">
-                <h3>Spawn Rápido de Criaturas</h3>
+                <h3>Invocación de Enemigo</h3>
                 <div class="form-row">
-                    <input type="text" id="dm-enemy-name" value="Goblin" style="flex:1;">
-                    <button onclick="invocarMonstruoDM()" style="background-color: var(--dm-purple);">Invocar</button>
+                    <input type="text" id="dm-enemy-name" value="Orco" style="flex:1;">
+                    <button onclick="invocarMonstruoDM()" style="background-color: var(--dm-purple);">Spawn</button>
                 </div>
-                <div class="combat-metrics" style="margin-top: 6px;">
-                    <div class="metric-box"><label>HP</label><input type="number" id="dm-enemy-hp" value="7"></div>
-                    <div class="metric-box"><label>CA</label><input type="number" id="dm-enemy-ca" value="13"></div>
-                    <div class="metric-box"><label>CR</label><input type="text" id="dm-enemy-cr" value="1/4"></div>
-                </div>
-                <textarea id="dm-enemy-info" style="width:95%; height:40px; resize:none; margin-top:4px;" placeholder="Detalles de ataque..."></textarea>
             </div>
         </div>
     </div>
@@ -351,266 +329,287 @@
         let peer = null; 
         let conexiones = [];
 
-        // Base Datos Biblioteca Compendio
         const compendio = {
             heroes: {
+                monje_god: { nombre: "Asura", clase: "Monje Guerrero Tanque", raza: "Ex Dios Adaptación", fue: 16, des: 20, con: 18, int: 12, sab: 20, car: 10, ca: 22, hp: 164, atq: "• Puños Divinos (Melee): +11 | 1d10+5\n• Proyección Ki (120ft): +11 | 1d10+5", feats: "• Adaptación Infinita: Resistencia total reactiva.\n• Paso del Dios: +30ft de movimiento libre." },
                 guerrero: { nombre: "Garith", clase: "Guerrero", raza: "Enano", fue: 16, des: 12, con: 16, int: 10, sab: 12, car: 10, ca: 18, hp: 13, atq: "Hacha +5 (1d8+3)", feats: "Segundo Viento" },
-                mago: { nombre: "Elysia", clase: "Mago", raza: "Elfo", fue: 8, des: 15, con: 13, int: 16, sab: 12, car: 10, ca: 12, hp: 7, atq: "Descarga Fuego +5 (1d10)", feats: "Recuperación Arcana" },
-                picaro: { nombre: "Zev", clase: "Pícaro", raza: "Mediano", fue: 10, des: 16, con: 12, int: 13, sab: 10, car: 14, ca: 14, hp: 9, atq: "Daga +5 (1d4+3 +1d6 furtivo)", feats: "Ataque Furtivo" },
-                paladin: { nombre: "Valen", clase: "Paladín", raza: "Humano", fue: 15, des: 10, con: 14, int: 8, sab: 12, car: 14, ca: 18, hp: 12, atq: "Espada Larga +4 (1d8+2)", feats: "Sentido Divino" }
+                mago: { nombre: "Elysia", clase: "Mago", raza: "Elfo", fue: 8, des: 15, con: 13, int: 16, sab: 12, car: 10, ca: 12, hp: 7, atq: "Descarga Fuego +5 (1d10)", feats: "Recuperación Arcana" }
             },
             monstruos: {
-                goblin: { nombre: "Goblin", hp: 7, ca: 13, cr: "1/4", info: "Cimitarra +4 (1d6+2)" },
-                orco: { nombre: "Orco Berserker", hp: 15, ca: 13, cr: "1", info: "Gran Hacha +5 (1d12+3)" },
-                ogro: { nombre: "Ogro", hp: 59, ca: 11, cr: "2", info: "Garrote +6 (2d8+4)" },
-                dragon: { nombre: "Dragón Rojo J.", hp: 178, ca: 18, cr: "10", info: "Mordisco +10 (2d10+6) / Aliento Fuego" }
+                goblin: { nombre: "Goblin", hp: 7, ca: 13, cr: "1/4", info: "Cimitarra +4" },
+                orco: { nombre: "Orco", hp: 15, ca: 13, cr: "1", info: "Hacha +5" }
             }
         };
 
-        function conmutarModoOscuro() {
-            document.body.classList.toggle('light-mode');
-        }
+        function conmutarModoOscuro() { document.body.classList.toggle('light-mode'); }
 
         function cambiarTexturaTablero() {
             const tex = document.getElementById('select-textura').value;
             const t = document.getElementById('grid-tablero');
-            t.className = '';
-            t.classList.add(tex);
+            t.className = ''; t.classList.add(tex);
             enviarDatos({ tipo: 'cambiar-textura', textura: tex });
         }
 
-        // --- SISTEMA DE CONDICIONES Y NIEBLAS ---
-        const tablero = document.getElementById('grid-tablero');
+        // --- SISTEMA DIBUJO LIBRE + BORRADOR + NIEBLAS ---
+        ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
 
-        function gestionarInteraccionMapa(clientX, clientY) {
+        function manejarInicioDibujo(e) {
+            if (!esDM) return;
+            const p = document.getElementById('tipo-pincel-dm').value;
+            const pos = obtenerCoordenadasLienzo(e);
+            
+            if (p === 'muro_libre' || p === 'borrador_libre') {
+                dibujando = true;
+                ctx.beginPath();
+                ctx.moveTo(pos.x, pos.y);
+            } else {
+                gestionarClicZonas(pos.x, pos.y, p);
+            }
+        }
+
+        function manejarMovimientoDibujo(e) {
+            if (!dibujando || !esDM) return;
+            const p = document.getElementById('tipo-pincel-dm').value;
+            const pos = obtenerCoordenadasLienzo(e);
+
+            if (p === 'muro_libre') {
+                ctx.strokeStyle = '#e11d48';
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.lineWidth = 4;
+                ctx.lineTo(pos.x, pos.y);
+                ctx.stroke();
+                enviarDatos({ tipo: 'draw-stroke', x: pos.x, y: pos.y, mode: 'draw' });
+            } else if (p === 'borrador_libre') {
+                ctx.globalCompositeOperation = 'destination-out';
+                ctx.lineWidth = 20; // Más grueso para borrar cómodo
+                ctx.lineTo(pos.x, pos.y);
+                ctx.stroke();
+                enviarDatos({ tipo: 'draw-stroke', x: pos.x, y: pos.y, mode: 'erase' });
+            }
+        }
+
+        function terminarDibujo() {
+            dibujando = false;
+            ctx.globalCompositeOperation = 'source-over'; // resetear
+            enviarDatos({ tipo: 'draw-end' });
+        }
+
+        function obtenerCoordenadasLienzo(e) {
             const rect = canvas.getBoundingClientRect();
-            const x = clientX - rect.left;
-            const y = clientY - rect.top;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return { x: clientX - rect.left, y: clientY - rect.top };
+        }
+
+        function gestionarClicZonas(x, y, pincel) {
             const celdaX = Math.floor(x / TAMANO_CELDA) * TAMANO_CELDA;
             const celdaY = Math.floor(y / TAMANO_CELDA) * TAMANO_CELDA;
-            const modoPincel = document.getElementById('tipo-pincel-dm').value;
 
-            if (modoPincel === 'fog_add') {
-                crearBloqueNiebla(celdaX, celdaY, true);
-            } else if (modoPincel === 'fog_rem') {
-                removerBloqueNieblaEn(celdaX, celdaY, true);
-            } else if (modoPincel.startsWith('zone_')) {
-                const tipoZona = modoPincel.split('_')[1]; // diff, curse, trap
-                crearBloqueZona(celdaX, celdaY, tipoZona, true);
+            if (pincel === 'fog_add') crearBloqueNiebla(celdaX, celdaY, true);
+            else if (pincel === 'fog_rem') removerBloqueNieblaEn(celdaX, celdaY, true);
+            else if (pincel.startsWith('zone_')) {
+                crearBloqueZona(celdaX, celdaY, pincel.split('_')[1], true);
             }
         }
 
         function crearBloqueNiebla(x, y, difundir) {
             const id = `fog-${x}-${y}`;
             if (document.getElementById(id)) return;
-            const block = document.createElement('div');
-            block.id = id;
-            block.className = 'fog-block';
-            block.style.left = x + 'px';
-            block.style.top = y + 'px';
-            block.onclick = () => { if (esDM && document.getElementById('tipo-pincel-dm').value === 'fog_rem') removerBloqueNieblaEn(x, y, true); };
-            tablero.appendChild(block);
+            const b = document.createElement('div'); b.id = id; b.className = 'fog-block';
+            b.style.left = x + 'px'; b.style.top = y + 'px';
+            b.onclick = () => { if(esDM && document.getElementById('tipo-pincel-dm').value === 'fog_rem') removerBloqueNieblaEn(x, y, true); };
+            document.getElementById('grid-tablero').appendChild(b);
             if (difundir) enviarDatos({ tipo: 'fog-add', x, y });
         }
 
         function removerBloqueNieblaEn(x, y, difundir) {
-            const block = document.getElementById(`fog-${x}-${y}`);
-            if (block) block.remove();
+            const b = document.getElementById(`fog-${x}-${y}`); if (b) b.remove();
             if (difundir) enviarDatos({ tipo: 'fog-rem', x, y });
         }
 
         function crearBloqueZona(x, y, tipo, difundir) {
-            const id = `zone-${x}-${y}`;
-            let block = document.getElementById(id);
-            if (block) block.remove(); // Reemplazar si ya existe
-            block = document.createElement('div');
-            block.id = id;
-            block.className = `zone-block ${tipo}`;
-            block.style.left = x + 'px';
-            block.style.top = y + 'px';
-            tablero.appendChild(block);
+            const id = `zone-${x}-${y}`; let b = document.getElementById(id); if (b) b.remove();
+            b = document.createElement('div'); b.id = id; b.className = `zone-block ${tipo}`;
+            b.style.left = x + 'px'; b.style.top = y + 'px';
+            document.getElementById('grid-tablero').appendChild(b);
             if (difundir) enviarDatos({ tipo: 'zone-add', x, y, clase: tipo });
         }
 
-        // Context Menú de Estados al hacer Doble Click en Tokens
-        function alternarEstadoToken(tokenEl, emoji) {
-            let ind = tokenEl.querySelector('.token-status-indicator');
-            if(!ind) {
-                ind = document.createElement('div');
-                ind.className = 'token-status-indicator';
-                tokenEl.appendChild(ind);
+        function limpiarDibujoLocal() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            document.querySelectorAll('.zone-block').forEach(z => z.remove());
+            enviarDatos({ tipo: 'dibujo-limpiar' });
+        }
+
+        // --- DRAG AND DROP REHECHO TOTALMENTE MEJORADO (SMOOTH MOUSE/TOUCH) ---
+        function hacerArrastrableUniversal(el) {
+            let activo = false;
+            let currentX, currentY, initialX, initialY;
+            let xOffset = parseInt(el.style.left) || 6;
+            let yOffset = parseInt(el.style.top) || 6;
+
+            el.addEventListener('mousedown', iniciarArrastre);
+            el.addEventListener('touchstart', iniciarArrastre, { passive: false });
+
+            function iniciarArrastre(e) {
+                if (e.type === 'touchstart') {
+                    initialX = e.touches[0].clientX - xOffset;
+                    initialY = e.touches[0].clientY - yOffset;
+                } else {
+                    initialX = e.clientX - xOffset;
+                    initialY = e.clientY - yOffset;
+                }
+                if (e.target === el || el.contains(e.target)) { activo = true; }
             }
-            if(ind.innerText.includes(emoji)) {
-                ind.innerText = ind.innerText.replace(emoji, '');
-            } else {
-                ind.innerText += emoji;
+
+            function moviendo(e) {
+                if (!activo) return;
+                e.preventDefault();
+
+                if (e.type === 'touchmove') {
+                    currentX = e.touches[0].clientX - initialX;
+                    currentY = e.touches[0].clientY - initialY;
+                } else {
+                    currentX = e.clientX - initialX;
+                    currentY = e.clientY - initialY;
+                }
+
+                xOffset = currentX;
+                yOffset = currentY;
+
+                el.style.left = currentX + 'px';
+                el.style.top = currentY + 'px';
+
+                if(el.classList.contains('token')) {
+                    enviarDatos({ tipo: 'mover-token', id: el.id, x: currentX, y: currentY });
+                }
             }
-            if(ind.innerText.trim() === '') ind.remove();
-            enviarDatos({ tipo: 'sync-status', id: tokenEl.id, htmlStatus: ind ? ind.innerText : '' });
+
+            function soltar() {
+                if (!activo) return;
+                activo = false;
+                
+                // Si es un token de cuadrícula, lo auto-ajustamos suavemente a la celda al soltar
+                if (el.classList.contains('token')) {
+                    xOffset = Math.round(xOffset / 40) * 40 + 2;
+                    yOffset = Math.round(yOffset / 40) * 40 + 2;
+                    el.style.left = xOffset + 'px';
+                    el.style.top = yOffset + 'px';
+                    enviarDatos({ tipo: 'mover-token', id: el.id, x: xOffset, y: yOffset });
+                }
+            }
+
+            window.addEventListener('mousemove', moviendo);
+            window.addEventListener('touchmove', moviendo, { passive: false });
+            window.addEventListener('mouseup', soltar);
+            window.addEventListener('touchend', soltar);
         }
 
-        // --- ANIMACIONES FLOTANTES ---
-        function animarTextoDado(resultado) {
-            const v = document.getElementById('contenedor-vista-mapa');
-            const el = document.createElement('div');
-            el.className = 'dice-animation';
-            el.innerText = resultado;
-            el.style.left = '45%';
-            el.style.top = '40%';
-            v.appendChild(el);
-            setTimeout(() => el.remove(), 700);
-        }
+        // Vincular barra de acciones flotante
+        hacerArrastrableUniversal(document.getElementById('barra-acciones'));
 
-        function dispararAccionFX(tipoAccion, color) {
-            const miNombre = document.getElementById('username').value || "Héroe";
-            const log = document.getElementById('log-dados');
-            
-            // Animación flash local en la ficha
-            const fi = document.getElementById('caja-ficha-pj');
-            fi.classList.add('action-fx');
-            setTimeout(() => fi.classList.remove('action-fx'), 500);
-
-            // Log Visual Estilizado enviado a todos
-            const msg = `<div style="border-left:4px solid ${color}; padding-left:4px; margin:4px 0; background:rgba(0,0,0,0.1);">💥 <b>${miNombre}</b> usó: <span style="color:${color}; font-weight:bold;">${tipoAccion}</span></div>`;
-            log.innerHTML += msg;
-            log.scrollTop = log.scrollHeight;
-
-            enviarDatos({ tipo: 'broadcast-fx', html: msg });
-        }
-
-        // --- CONEXIÓN DE SALAS PEERJS ---
-        function crearSalaPersonalizada() {
-            const nombreSala = document.getElementById('custom-room-id').value.trim().toLowerCase();
-            if (!nombreSala) return alert("Escribe un nombre de sala.");
-            if (peer) peer.destroy();
-            conexiones = [];
-            document.getElementById('mi-id').innerText = "Creando...";
-            peer = new Peer(nombreSala);
-            peer.on('open', (id) => { 
-                document.getElementById('mi-id').innerText = "Sala: " + id;
-                document.getElementById('mi-id').style.color = "#10b981";
-            });
-            peer.on('connection', (conn) => { configurarConexion(conn); });
-        }
-
-        function conectarAlDM() {
-            const idDestino = document.getElementById('peer-id-destino').value.trim().toLowerCase();
-            if (!idDestino) return alert("Ingresa ID de destino.");
-            if (!peer || peer.destroyed) {
-                peer = new Peer();
-                peer.on('open', () => { configurarConexion(peer.connect(idDestino)); });
-                peer.on('connection', (conn) => { configurarConexion(conn); });
-            } else { configurarConexion(peer.connect(idDestino)); }
-        }
-
-        function configurarConexion(conn) {
-            conexiones.push(conn);
-            conn.on('data', (data) => {
-                if (data.tipo === 'dado') { mostrarLogDado(data.usuario, data.caras, data.resultado); animarTextoDado(data.resultado); }
-                else if (data.tipo === 'mover-token') { const t = document.getElementById(data.id); if (t) { t.style.left = data.x + "px"; t.style.top = data.y + "px"; } }
-                else if (data.tipo === 'crear-token') crearTokenVisual(data.id, data.texto, data.clase, data.x, data.y);
-                else if (data.tipo === 'dibujo-muro') dibujarMuroSegmento(data.x1, data.y1, data.x2, data.y2, data.color);
-                else if (data.tipo === 'dibujo-limpiar') ctx.clearRect(0, 0, canvas.width, canvas.height);
-                else if (data.tipo === 'cambiar-textura') { const t = document.getElementById('grid-tablero'); t.className = ''; t.classList.add(data.textura); }
-                else if (data.tipo === 'fog-add') crearBloqueNiebla(data.x, data.y, false);
-                else if (data.tipo === 'fog-rem') removerBloqueNieblaEn(data.x, data.y, false);
-                else if (data.tipo === 'zone-add') crearBloqueZona(data.x, data.y, data.clase, false);
-                else if (data.tipo === 'broadcast-fx') { const log = document.getElementById('log-dados'); log.innerHTML += data.html; log.scrollTop = log.scrollHeight; }
-                else if (data.tipo === 'sync-status') { const t = document.getElementById(data.id); if(t){ let ind = t.querySelector('.token-status-indicator'); if(!ind && data.htmlStatus){ ind = document.createElement('div'); ind.className='token-status-indicator'; t.appendChild(ind); } if(ind) { ind.innerText = data.htmlStatus; if(ind.innerText.trim()==='') ind.remove(); } } }
-            });
-        }
-        function enviarDatos(data) { conexiones.forEach(conn => { if (conn.open) conn.send(data); }); }
-
-        // --- MANEJO DE ROLES ---
-        const barraAcciones = document.getElementById('barra-acciones');
-        hacerElementoFlotanteArraastable(barraAcciones);
-
-        function cambiarRol() {
-            esDM = !esDM;
-            document.body.classList.toggle('dm-mode', esDM);
-            document.getElementById('btn-toggle-rol').innerText = esDM ? "Modo Jugador 🛡️" : "Ser DM 👑";
-            document.getElementById('btn-toggle-rol').style.backgroundColor = esDM ? "var(--accent-red)" : "var(--dm-purple)";
-            document.getElementById('role-text').innerText = esDM ? "Modo: DUNGEON MASTER" : "Modo: JUGADOR";
-            document.getElementById('btn-tab-ficha').innerText = esDM ? "👑 Panel DM" : "🛡️ Ficha";
-        }
-
-        // --- DIBUJO Y RENDER INTERACTIVO ---
-        ctx.lineWidth = 4; ctx.lineCap = 'square';
-        function obtenerPuntoRejillaCercano(clientX, clientY) {
-            const rect = canvas.getBoundingClientRect();
-            const xLienzo = clientX - rect.left, yLienzo = clientY - rect.top;
-            const celdaX = Math.floor(xLienzo / TAMANO_CELDA), celdaY = Math.floor(yLienzo / TAMANO_CELDA);
-            const izq = celdaX * TAMANO_CELDA, der = izq + TAMANO_CELDA, arr = celdaY * TAMANO_CELDA, abj = arr + TAMANO_CELDA;
-            const minDist = Math.min(Math.abs(xLienzo - izq), Math.abs(xLienzo - der), Math.abs(yLienzo - arr), Math.abs(yLienzo - abj));
-            if (minDist === Math.abs(xLienzo - izq)) return { x1: izq, y1: arr, x2: izq, y2: abj };
-            if (minDist === Math.abs(xLienzo - der)) return { x1: der, y1: arr, x2: der, y2: abj };
-            if (minDist === Math.abs(yLienzo - arr)) return { x1: izq, y1: arr, x2: der, y2: arr };
-            return { x1: izq, y1: abj, x2: der, y2: abj };
-        }
-        function dibujarMuroSegmento(x1, y1, x2, y2, color) { ctx.strokeStyle = color; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); }
-        
-        function manejarInicioDibujo(e) { 
-            if (!esDM) return;
-            const mode = document.getElementById('tipo-pincel-dm').value;
-            if (mode === 'muro_red') { dibujando = true; manejarMuroTrazado(e); } 
-            else { const cx = e.touches ? e.touches[0].clientX : e.clientX; const cy = e.touches ? e.touches[0].clientY : e.clientY; gestionarInteraccionMapa(cx, cy); }
-        }
-        function manejarMuroTrazado(e) {
-            if (!dibujando || !esDM) return;
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX; const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            const seg = obtenerPuntoRejillaCercano(clientX, clientY); const color = "#e11d48";
-            dibujarMuroSegmento(seg.x1, seg.y1, seg.x2, seg.y2, color);
-            enviarDatos({ tipo: 'dibujo-muro', x1: seg.x1, y1: seg.y1, x2: seg.x2, y2: seg.y2, color: color });
-        }
-        canvas.addEventListener('mousedown', manejarInicioDibujo); canvas.addEventListener('mousemove', manejarMuroTrazado); window.addEventListener('mouseup', () => dibujando = false);
-        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); manejarInicioDibujo(e); }, { passive: false }); canvas.addEventListener('touchmove', (e) => { e.preventDefault(); manejarMuroTrazado(e); }, { passive: false }); canvas.addEventListener('touchend', () => dibujando = false);
-        function limpiarDibujoLocal() { ctx.clearRect(0, 0, canvas.width, canvas.height); document.querySelectorAll('.zone-block').forEach(z=>z.remove()); enviarDatos({ tipo: 'dibujo-limpiar' }); }
-
-        // --- DADOS ---
-        function lanzarDado(caras) {
-            const res = Math.floor(Math.random() * caras) + 1; const miNombre = document.getElementById('username').value.trim() || "Héroe";
-            mostrarLogDado(miNombre, caras, res); animarTextoDado(res); enviarDatos({ tipo: 'dado', usuario: miNombre, caras: caras, resultado: res });
-        }
-        function mostrarLogDado(u, c, r) { const log = document.getElementById('log-dados'); log.innerHTML += `<div>🎲 <b>${u}</b> (d${c}): <span style="color:var(--dnd-gold); font-weight:bold;">${r}</span></div>`; log.scrollTop = log.scrollHeight; }
-
-        // --- TOKENS ---
+        // --- MANEJO DE TOKENS & ESTADOS ---
         function crearTokenLocal(texto, tipo) {
-            const tokenId = 'token-' + Date.now(); const clase = tipo === 'enemigo' ? 'token enemigo' : 'token';
+            const tokenId = 'token-' + Date.now();
+            const clase = tipo === 'enemigo' ? 'token enemigo' : 'token';
             let etiqueta = texto; if (tipo === 'jugador' && !esDM) etiqueta = (document.getElementById('username').value || "PJ").substring(0,4);
-            crearTokenVisual(tokenId, etiqueta, clase, 6, 6); enviarDatos({ tipo: 'crear-token', id: tokenId, texto: etiqueta, clase: clase, x: 6, y: 6 });
+            crearTokenVisual(tokenId, etiqueta, clase, 6, 6);
+            enviarDatos({ tipo: 'crear-token', id: tokenId, texto: etiqueta, clase: clase, x: 6, y: 6 });
         }
+
         function crearTokenVisual(id, texto, clase, x, y) {
             if (document.getElementById(id)) return;
             const token = document.createElement('div'); token.id = id; token.className = clase; token.innerText = texto;
             token.style.left = x + "px"; token.style.top = y + "px";
             
-            // Doble click para setear condiciones rápidas de forma circular
             token.ondblclick = () => {
-                const est = prompt("Asignar/Quitar estado (Escribe letra):\n P = Paralizado ⚡\n V = Envenenado 🧪\n I = Invisible 👤\n Q = Quemado 🔥\n B = Bendecido ✨").toUpperCase();
-                if(est === 'P') alternarEstadoToken(token, '⚡');
-                if(est === 'V') alternarEstadoToken(token, '🧪');
-                if(est === 'I') alternarEstadoToken(token, '👤');
-                if(est === 'Q') alternarEstadoToken(token, '🔥');
-                if(est === 'B') alternarEstadoToken(token, '✨');
+                const est = prompt("Asignar Estado:\n P = Paralizado ⚡\n V = Envenenado 🧪\n I = Invisible 👤\n Q = Quemado 🔥\n B = Bendecido ✨").toUpperCase();
+                if(['P','V','I','Q','B'].includes(est)) {
+                    let map = { P:'⚡', V:'🧪', I:'👤', Q:'🔥', B:'✨' };
+                    alternarEstadoToken(token, map[est]);
+                }
             };
-            hacerArrastrable(token); tablero.appendChild(token);
-        }
-        function hacerArrastrable(elemento) {
-            let p1 = 0, p2 = 0, p3 = 0, p4 = 0;
-            elemento.onmousedown = (e) => { e.preventDefault(); p3 = e.clientX; p4 = e.clientY; document.onmouseup = fin; document.onmousemove = movMouse; };
-            elemento.addEventListener('touchstart', (e) => { e.preventDefault(); p3 = e.touches[0].clientX; p4 = e.touches[0].clientY; document.addEventListener('touchend', fin); document.addEventListener('touchmove', movTouch, { passive: false }); }, { passive: false });
-            function movMouse(e) { run(e.clientX, e.clientY); }
-            function movTouch(e) { run(e.touches[0].clientX, e.touches[0].clientY); }
-            function run(cx, cy) {
-                p1 = p3 - cx; p2 = p4 - cy; p3 = cx; p4 = cy;
-                let top = Math.round((elemento.offsetTop - p2) / 40) * 40 + 2; let left = Math.round((elemento.offsetLeft - p1) / 40) * 40 + 2;
-                if (top >= 0 && top <= 760) elemento.style.top = top + "px"; if (left >= 0 && left <= 760) elemento.style.left = left + "px";
-                enviarDatos({ tipo: 'mover-token', id: elemento.id, x: left, y: top });
-            }
-            function fin() { document.onmouseup = null; document.onmousemove = null; document.removeEventListener('touchend', fin); document.removeEventListener('touchmove', movTouch); }
+            hacerArrastrableUniversal(token);
+            document.getElementById('grid-tablero').appendChild(token);
         }
 
-        // Cargar Datos Biblioteca
+        function alternarEstadoToken(t, emoji) {
+            let ind = t.querySelector('.token-status-indicator');
+            if(!ind) { ind = document.createElement('div'); ind.className = 'token-status-indicator'; t.appendChild(ind); }
+            if(ind.innerText.includes(emoji)) ind.innerText = ind.innerText.replace(emoji, '');
+            else ind.innerText += emoji;
+            if(ind.innerText.trim() === '') ind.remove();
+            enviarDatos({ tipo: 'sync-status', id: t.id, htmlStatus: ind ? ind.innerText : '' });
+        }
+
+        // --- EVENTOS DEL LIENZO DIBUJO ---
+        canvas.addEventListener('mousedown', manejarInicioDibujo);
+        canvas.addEventListener('mousemove', manejarMovimientoDibujo);
+        window.addEventListener('mouseup', terminarDibujo);
+        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); manejarInicioDibujo(e); }, { passive: false });
+        canvas.addEventListener('touchmove', (e) => { e.preventDefault(); manejarMovimientoDibujo(e); }, { passive: false });
+        window.addEventListener('touchend', terminarDibujo);
+
+        // --- FUNCIONES SALAS PEERJS ---
+        function crearSalaPersonalizada() {
+            const r = document.getElementById('custom-room-id').value.trim().toLowerCase(); if (!r) return;
+            if(peer) peer.destroy(); conexiones = [];
+            peer = new Peer(r);
+            peer.on('open', id => { document.getElementById('mi-id').innerText = "Sala: " + id; document.getElementById('mi-id').style.color = "#10b981"; });
+            peer.on('connection', conn => configurarConexion(conn));
+        }
+
+        function conectarAlDM() {
+            const d = document.getElementById('peer-id-destino').value.trim().toLowerCase(); if(!d) return;
+            if(!peer) peer = new Peer();
+            peer.on('open', () => configurarConexion(peer.connect(d)));
+        }
+
+        function configurarConexion(conn) {
+            conexiones.push(conn);
+            conn.on('data', d => {
+                if (d.tipo === 'mover-token') { const t = document.getElementById(d.id); if (t) { t.style.left = d.x + "px"; t.style.top = d.y + "px"; } }
+                else if (d.tipo === 'crear-token') crearTokenVisual(d.id, d.texto, d.clase, d.x, d.y);
+                else if (d.tipo === 'cambiar-textura') { const t = document.getElementById('grid-tablero'); t.className = ''; t.classList.add(d.textura); }
+                else if (d.tipo === 'draw-stroke') {
+                    if (d.mode === 'draw') { ctx.strokeStyle = '#e11d48'; ctx.globalCompositeOperation = 'source-over'; ctx.lineWidth = 4; }
+                    else { ctx.globalCompositeOperation = 'destination-out'; ctx.lineWidth = 20; }
+                    ctx.lineTo(d.x, d.y); ctx.stroke();
+                }
+                else if (d.tipo === 'draw-end') { ctx.beginPath(); ctx.globalCompositeOperation = 'source-over'; }
+                else if (d.tipo === 'dibujo-limpiar') { ctx.clearRect(0, 0, canvas.width, canvas.height); document.querySelectorAll('.zone-block').forEach(z=>z.remove()); }
+                else if (d.tipo === 'fog-add') crearBloqueNiebla(d.x, d.y, false);
+                else if (d.tipo === 'fog-rem') removerBloqueNieblaEn(d.x, d.y, false);
+                else if (d.tipo === 'zone-add') crearBloqueZona(d.x, d.y, d.clase, false);
+                else if (d.tipo === 'broadcast-fx') { const l = document.getElementById('log-dados'); l.innerHTML += d.html; l.scrollTop = l.scrollHeight; }
+                else if (d.tipo === 'sync-status') { const t = document.getElementById(d.id); if(t){ let i = t.querySelector('.token-status-indicator'); if(!i && d.htmlStatus){ i=document.createElement('div'); i.className='token-status-indicator'; t.appendChild(i); } if(i){ i.innerText = d.htmlStatus; if(i.innerText.trim()==='') i.remove(); } } }
+                else if (d.tipo === 'dado') { mostrarLogDado(d.usuario, d.caras, d.resultado); animarTextoDado(d.resultado); }
+            });
+        }
+        function enviarDatos(data) { conexiones.forEach(c => { if (c.open) c.send(data); }); }
+
+        // --- SISTEMA INTERFAZ GENERAL ---
+        function cambiarRol() {
+            esDM = !esDM; document.body.classList.toggle('dm-mode', esDM);
+            document.getElementById('btn-toggle-rol').innerText = esDM ? "Modo Jugador 🛡️" : "Ser DM 👑";
+            document.getElementById('role-text').innerText = esDM ? "Modo: DUNGEON MASTER" : "Modo: JUGADOR";
+            document.getElementById('btn-tab-ficha').innerText = esDM ? "👑 Panel DM" : "🛡️ Ficha";
+        }
+        function lanzarDado(c) {
+            const r = Math.floor(Math.random() * c) + 1; const n = document.getElementById('username').value || "Héroe";
+            mostrarLogDado(n, c, r); animarTextoDado(r); enviarDatos({ tipo: 'dado', usuario: n, caras: c, resultado: r });
+        }
+        function mostrarLogDado(u, c, r) { const l = document.getElementById('log-dados'); l.innerHTML += `<div>🎲 <b>${u}</b> (d${c}): <span style="color:var(--dnd-gold); font-weight:bold;">${r}</span></div>`; l.scrollTop = l.scrollHeight; }
+        function animarTextoDado(res) { const v = document.getElementById('contenedor-vista-mapa'); const e = document.createElement('div'); e.className = 'dice-animation'; e.innerText = res; e.style.left = '45%'; e.style.top = '40%'; v.appendChild(e); setTimeout(() => e.remove(), 700); }
+        
+        function dispararAccionFX(tipo, col) {
+            const n = document.getElementById('username').value || "Héroe";
+            const f = document.getElementById('caja-ficha-pj'); f.classList.add('action-fx'); setTimeout(() => f.classList.remove('action-fx'), 500);
+            const msg = `<div style="border-left:4px solid ${col}; padding-left:4px; margin:4px 0; background:rgba(0,0,0,0.1);">💥 <b>${n}</b>: <span style="color:${col}; font-weight:bold;">${tipo}</span></div>`;
+            document.getElementById('log-dados').innerHTML += msg; document.getElementById('log-dados').scrollTop = document.getElementById('log-dados').scrollHeight;
+            enviarDatos({ tipo: 'broadcast-fx', html: msg });
+        }
+
         function cargarHeroeCompendio() {
             const c = document.getElementById('select-lib-heroes').value; if(!c) return; const h = compendio.heroes[c];
             document.getElementById('pc-name').value = h.nombre; document.getElementById('pc-clase').value = h.clase;
@@ -624,13 +623,11 @@
         }
         function cargarMonstruoCompendio() {
             const c = document.getElementById('select-lib-monstruos').value; if(!c) return; const m = compendio.monstruos[c];
-            document.getElementById('dm-enemy-name').value = m.nombre; document.getElementById('dm-enemy-hp').value = m.hp;
-            document.getElementById('dm-enemy-ca').value = m.ca; document.getElementById('dm-enemy-cr').value = m.cr;
-            document.getElementById('dm-enemy-info').value = m.info;
+            document.getElementById('dm-enemy-name').value = m.nombre;
         }
         function invocarMonstruoDM() { const n = document.getElementById('dm-enemy-name').value || "E"; crearTokenLocal(n.substring(0,4), 'enemigo'); }
-        function verPanel(idPanel, btn) { document.querySelectorAll('.panel').forEach(p => p.classList.remove('active')); document.querySelectorAll('.mobile-nav button').forEach(b => b.classList.remove('active')); if (idPanel !== 'mapa') document.getElementById('panel-' + idPanel).classList.add('active'); btn.classList.add('active'); }
-        function cambiarTab(tabId, btn) { document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none'); document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.getElementById(tabId).style.display = 'block'; btn.classList.add('active'); }
+        function verPanel(id, b) { document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active')); document.querySelectorAll('.mobile-nav button').forEach(x=>x.classList.remove('active')); if(id!=='mapa') document.getElementById('panel-'+id).classList.add('active'); b.classList.add('active'); }
+        function cambiarTab(id, b) { document.querySelectorAll('.tab-content').forEach(t=>t.style.display='none'); document.querySelectorAll('.tab-btn').forEach(x=>x.classList.remove('active')); document.getElementById(id).style.display='block'; b.classList.add('active'); }
     </script>
 </body>
 </html>
