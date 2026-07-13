@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>D&D Mesa Táctica Épica - Adaptación Total</title>
+    <title>D&D Mesa Táctica Épica - Panteón de Dioses</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root {
@@ -242,8 +242,12 @@
                 <select id="select-lib-heroes" onchange="cargarHeroeCompendio()" style="width:100%;">
                     <option value="">-- Elige tu Héroe --</option>
                     <option value="monje_god">Asura (Ex Dios de la Adaptación - Monje Guerrero)</option>
-                    <option value="guerrero">Garith (Guerrero Enano)</option>
-                    <option value="mago">Elysia (Maga Elfa)</option>
+                    <option value="ignis_god">Ignis (Ex Dios del Caos Elemental - Evocador)</option>
+                    <option value="kaelen_god">Kaelen (Ex Dios de la Fortaleza - Bastión Inamovible)</option>
+                    <option value="zephyr_god">Zephyr (Ex Dios del Viento - Cazador Cósmico)</option>
+                    <option value="vespera_god">Vespera (Ex Diosa de la Noche - Asesina de Sombras)</option>
+                    <option value="sariel_god">Sariel (Ex Dios de la Armonía - Guardián Vital)</option>
+                    <option value="xerath_god">Xerath (Ex Dios de la Disrupción - Cronomante)</option>
                 </select>
             </div>
             <div class="input-group dm-only">
@@ -287,10 +291,10 @@
 
             <h3>⚔️ Acciones con FX</h3>
             <div class="action-grid">
-                <button class="btn-fx-atq" onclick="dispararAccionFX('Ráfaga de Golpes Cuerpo a Cuerpo ⚔️', '#b91c1c')">Ataque Melee</button>
-                <button class="btn-fx-mag" onclick="dispararAccionFX('Onda del Vacío Adaptativa (Distancia) 🔮', '#6d28d9')">Ataque Rango</button>
-                <button class="btn-fx-def" onclick="dispararAccionFX('Defensa Espejo Divina (Tanque) 🛡️', '#1d4ed8')">Tanquear / Absorber</button>
-                <button class="btn-fx-cur" onclick="dispararAccionFX('Reorganización Celular ❤️', '#047857')">Adaptar / Curar</button>
+                <button class="btn-fx-atq" onclick="dispararAccionFX('Ataque Primario ⚔️', '#b91c1c')">Ataque Físico/Melee</button>
+                <button class="btn-fx-mag" onclick="dispararAccionFX('Poder Supremo / Rango 🔮', '#6d28d9')">Hechizo / Distancia</button>
+                <button class="btn-fx-def" onclick="dispararAccionFX('Habilidad Defensiva / Mitigación 🛡️', '#1d4ed8')">Tanquear / Absorber</button>
+                <button class="btn-fx-cur" onclick="dispararAccionFX('Habilidad Especial / Rasgo Único ❤️', '#047857')">Rasgo Adaptativo</button>
             </div>
 
             <div class="section-tabs">
@@ -331,9 +335,13 @@
 
         const compendio = {
             heroes: {
-                monje_god: { nombre: "Asura", clase: "Monje Guerrero Tanque", raza: "Ex Dios Adaptación", fue: 16, des: 20, con: 18, int: 12, sab: 20, car: 10, ca: 22, hp: 164, atq: "• Puños Divinos (Melee): +11 | 1d10+5\n• Proyección Ki (120ft): +11 | 1d10+5", feats: "• Adaptación Infinita: Resistencia total reactiva.\n• Paso del Dios: +30ft de movimiento libre." },
-                guerrero: { nombre: "Garith", clase: "Guerrero", raza: "Enano", fue: 16, des: 12, con: 16, int: 10, sab: 12, car: 10, ca: 18, hp: 13, atq: "Hacha +5 (1d8+3)", feats: "Segundo Viento" },
-                mago: { nombre: "Elysia", clase: "Mago", raza: "Elfo", fue: 8, des: 15, con: 13, int: 16, sab: 12, car: 10, ca: 12, hp: 7, atq: "Descarga Fuego +5 (1d10)", feats: "Recuperación Arcana" }
+                monje_god: { nombre: "Asura", clase: "Monje Guerrero Tanque", raza: "Ex Dios Adaptación", fue: 16, des: 20, con: 18, int: 12, sab: 20, car: 10, ca: 22, hp: 164, ini: "60 ft", atq: "• Puños Divinos (Melee): +11 | 1d10+5\n• Proyección Ki (120ft): +11 | 1d10+5", feats: "• Adaptación Infinita: Resistencia total reactiva.\n• Paso del Dios: +30ft de movimiento libre." },
+                ignis_god: { nombre: "Ignis", clase: "Evocador Caótico", raza: "Ex Dios del Caos Elemental", fue: 10, des: 16, con: 16, int: 20, sab: 14, car: 12, ca: 16, hp: 142, ini: "40 ft", atq: "• Detonación Ígnea (150ft): +11 | 8d6 Fuego (Área 20ft)\n• Flagelo Volcánico (Melee): +7 | 2d10 Fuego", feats: "• Fundición de Éter: Ignora resistencias al fuego.\n• Parpadeo de Ceniza: Teletransporte de 15ft tras lanzar un hechizo." },
+                kaelen_god: { nombre: "Kaelen", clase: "Bastión Inamovible", raza: "Ex Dios de la Fortaleza", fue: 20, des: 10, con: 22, int: 10, sab: 14, car: 12, ca: 25, hp: 224, ini: "25 ft", atq: "• Martillo de la Eternidad (Melee): +11 | 2d8+5 Impacto + Derribo\n• Onda Sísmica (30ft Rango): CD 19 Fuerza o Aturdido", feats: "• Gravedad Divina: Los enemigos a 10ft no pueden usar acciones de movimiento.\n• Baluarte Absoluto: Reduce todo daño recibido en 10 puntos." },
+                zephyr_god: { nombre: "Zephyr", clase: "Cazador Cósmico", raza: "Ex Dios del Viento", fue: 12, des: 22, con: 14, int: 12, sab: 18, car: 10, ca: 20, hp: 124, ini: "90 ft", atq: "• Flecha de Vendaval (300ft): +12 | 1d8+6 Perforante (Empuja 15ft)\n• Tempestad de Acero (Melee): +12 | 4 Ataques rápidos (1d6 c/u)", feats: "• Cuerpo Gaseoso: Puede atravesar enemigos y estructuras sin recibir daño.\n• Ojo del Huracán: Ventaja permanente en ataques a más de 60ft." },
+                vespera_god: { nombre: "Vespera", clase: "Asesina de Sombras", raza: "Ex Diosa de la Noche", fue: 10, des: 22, con: 14, int: 14, sab: 16, car: 14, ca: 21, hp: 144, ini: "50 ft", atq: "• Daga del Vacío (Melee/Rango 60ft): +12 | 1d4+6 + 10d6 Daño de Umbra\n• Ejecución Silenciosa: Ataque sorpresa causa daño crítico maximizado", feats: "• Amparo Estelar: Invisible mientras esté en luz tenue u oscuridad.\n• Paso Umbrío: Se funde con la sombra de un enemigo a 60ft para aparecer detrás." },
+                sariel_god: { nombre: "Sariel", clase: "Guardián Vital", raza: "Ex Dios de la Armonía", fue: 18, des: 14, con: 18, int: 10, sab: 22, car: 12, ca: 23, hp: 184, ini: "35 ft", atq: "• Mayal del Alba (Melee): +10 | 1d8+4 Radiante (Cura 1d8 a aliado cercano)\n• Destello de Vida (90ft Rango): +12 | 4d10 Radiante", feats: "• Transfusión Divina: Reorienta el daño recibido por aliados hacia su propia vida.\n• Presencia Vivificante: Los aliados a 20ft recuperan 10 HP al inicio de su turno." },
+                xerath_god: { nombre: "Xerath", clase: "Cronomante Real", raza: "Ex Dios de la Disrupción", fue: 8, des: 16, con: 14, int: 22, sab: 16, car: 12, ca: 18, hp: 104, ini: "45 ft", atq: "• Grieta Temporal (90ft Rango): CD 19 Desviación | 4d10 Fuerza + Ralentizado\n• Paradoja Cuántica (Melee): +7 | Desplaza al objetivo 30ft al pasado", feats: "• Bucle de Turno: Puede forzar a una criatura a repetir su última acción.\n• Rebobinar Destino: Una vez por ronda, cancela un ataque crítico enemigo." }
             },
             monstruos: {
                 goblin: { nombre: "Goblin", hp: 7, ca: 13, cr: "1/4", info: "Cimitarra +4" },
@@ -381,7 +389,7 @@
                 enviarDatos({ tipo: 'draw-stroke', x: pos.x, y: pos.y, mode: 'draw' });
             } else if (p === 'borrador_libre') {
                 ctx.globalCompositeOperation = 'destination-out';
-                ctx.lineWidth = 20; // Más grueso para borrar cómodo
+                ctx.lineWidth = 20;
                 ctx.lineTo(pos.x, pos.y);
                 ctx.stroke();
                 enviarDatos({ tipo: 'draw-stroke', x: pos.x, y: pos.y, mode: 'erase' });
@@ -390,7 +398,7 @@
 
         function terminarDibujo() {
             dibujando = false;
-            ctx.globalCompositeOperation = 'source-over'; // resetear
+            ctx.globalCompositeOperation = 'source-over';
             enviarDatos({ tipo: 'draw-end' });
         }
 
@@ -441,7 +449,7 @@
             enviarDatos({ tipo: 'dibujo-limpiar' });
         }
 
-        // --- DRAG AND DROP REHECHO TOTALMENTE MEJORADO (SMOOTH MOUSE/TOUCH) ---
+        // --- ARRASTRE UNIVERSAL REHECHO ---
         function hacerArrastrableUniversal(el) {
             let activo = false;
             let currentX, currentY, initialX, initialY;
@@ -489,7 +497,6 @@
                 if (!activo) return;
                 activo = false;
                 
-                // Si es un token de cuadrícula, lo auto-ajustamos suavemente a la celda al soltar
                 if (el.classList.contains('token')) {
                     xOffset = Math.round(xOffset / 40) * 40 + 2;
                     yOffset = Math.round(yOffset / 40) * 40 + 2;
@@ -505,10 +512,8 @@
             window.addEventListener('touchend', soltar);
         }
 
-        // Vincular barra de acciones flotante
         hacerArrastrableUniversal(document.getElementById('barra-acciones'));
 
-        // --- MANEJO DE TOKENS & ESTADOS ---
         function crearTokenLocal(texto, tipo) {
             const tokenId = 'token-' + Date.now();
             const clase = tipo === 'enemigo' ? 'token enemigo' : 'token';
@@ -542,7 +547,6 @@
             enviarDatos({ tipo: 'sync-status', id: t.id, htmlStatus: ind ? ind.innerText : '' });
         }
 
-        // --- EVENTOS DEL LIENZO DIBUJO ---
         canvas.addEventListener('mousedown', manejarInicioDibujo);
         canvas.addEventListener('mousemove', manejarMovimientoDibujo);
         window.addEventListener('mouseup', terminarDibujo);
@@ -550,7 +554,7 @@
         canvas.addEventListener('touchmove', (e) => { e.preventDefault(); manejarMovimientoDibujo(e); }, { passive: false });
         window.addEventListener('touchend', terminarDibujo);
 
-        // --- FUNCIONES SALAS PEERJS ---
+        // --- PEERJS ---
         function crearSalaPersonalizada() {
             const r = document.getElementById('custom-room-id').value.trim().toLowerCase(); if (!r) return;
             if(peer) peer.destroy(); conexiones = [];
@@ -618,6 +622,7 @@
             document.getElementById('s-int').value = h.int; document.getElementById('s-sab').value = h.sab;
             document.getElementById('s-car').value = h.car; document.getElementById('pc-ca').value = h.ca;
             document.getElementById('pc-hp').value = h.hp; document.getElementById('pc-hpmax').value = h.hp;
+            document.getElementById('pc-ini').value = h.ini;
             document.getElementById('pc-atq').value = h.atq; document.getElementById('pc-feats').value = h.feats;
             document.getElementById('username').value = h.nombre;
         }
